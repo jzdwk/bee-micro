@@ -12,6 +12,8 @@ import (
 )
 
 func main() {
+	//conf beego
+	beego.BConfig.CopyRequestBody = true
 	//consul
 	reg := consul.NewRegistry(func(options *registry.Options) {
 		options.Addrs = []string{"myecs.jzd:65085"}
@@ -21,7 +23,7 @@ func main() {
 		server.Address(":8010"),
 	)
 
-	if err := srv.Handle(srv.NewHandler(beego.BeeApp.Handlers));err != nil {
+	if err := srv.Handle(srv.NewHandler(beego.BeeApp.Handlers)); err != nil {
 		logs.Error(err.Error())
 		return
 	}
@@ -32,10 +34,8 @@ func main() {
 		micro.Registry(reg),
 	)
 	service.Init()
-	if err := service.Run();err != nil{
+	if err := service.Run(); err != nil {
 		logs.Error("init service err")
 		return
 	}
 }
-
-

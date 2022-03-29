@@ -1,4 +1,4 @@
-package cli
+package v3
 
 import (
 	"context"
@@ -40,8 +40,8 @@ func doPostRequest(t *testing.T, c client.Client) {
 
 	req := struct {
 		Name string
-		Age int
-	}{"jzd",123}
+		Age  int
+	}{"jzd", 123}
 	request := c.NewRequest("http-demo", "POST:/demo/hello/for-test/post", req, client.WithContentType("application/json"))
 	var response Resp
 	if err := c.Call(context.Background(), request, &response); err != nil {
