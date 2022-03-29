@@ -21,11 +21,9 @@ type PostInfo struct {
 	Age  int
 }
 
-// @Title create api service
-// @Description create api backend service
-// @Success 201 success message
-// @Failure 400 param parse error
-// @Failure 500 server internal error
+// @Title get test
+// @Description get test
+// @Success 200 success message
 // @router /:message/get [get]
 func (c *MainController) Get() {
 	message := c.Ctx.Input.Param(":message")
@@ -34,11 +32,9 @@ func (c *MainController) Get() {
 	c.ServeJSON()
 }
 
-// @Title create api service
-// @Description create api backend service
-// @Success 201 success message
-// @Failure 400 param parse error
-// @Failure 500 server internal error
+// @Title post test
+// @Description post test
+// @Success 200 success message
 // @router /:message/post [post]
 func (c *MainController) Post() {
 	var v PostInfo
