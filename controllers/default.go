@@ -1,7 +1,9 @@
 package controllers
 
 import (
+	mybroker "bee-micro/broker"
 	"encoding/json"
+	"github.com/asim/go-micro/v3/broker"
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"net/http"
@@ -28,7 +30,8 @@ type PostInfo struct {
 func (c *MainController) Get() {
 	message := c.Ctx.Input.Param(":message")
 	c.Ctx.Output.SetStatus(http.StatusOK)
-	c.Data["json"] = Message{Method: c.Ctx.Request.Method, Message: message}
+	msg := Message{Method: c.Ctx.Request.Method, Message: message}
+	c.Data["json"] = msg
 	c.ServeJSON()
 }
 
@@ -43,6 +46,15 @@ func (c *MainController) Post() {
 		return
 	}
 	message := c.Ctx.Input.Param(":message")
+	//put msg to broker
+	brokerMsg := &broker.Message{
+		Header: nil,
+		Body:   c.Ctx.Input.RequestBody,
+	}
+	if err := mybroker.RedisBk.Publish(mybroker.BrokerTopic, brokerMsg); err != nil {
+		c.Data["json"] = "ERROR"
+		c.ServeJSON()
+	}
 	c.Ctx.Output.SetStatus(http.StatusOK)
 	c.Data["json"] = Message{Method: c.Ctx.Request.Method, Message: message}
 	c.ServeJSON()

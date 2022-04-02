@@ -22,6 +22,9 @@ github.com/ProtonMail/go-crypto/openpgp/s2k
 github.com/acomagu/bufpipe
 # github.com/armon/go-metrics v0.0.0-20180917152333-f0300d1749da
 github.com/armon/go-metrics
+# github.com/asim/go-micro/plugins/broker/redis/v3 v3.7.0
+## explicit
+github.com/asim/go-micro/plugins/broker/redis/v3
 # github.com/asim/go-micro/plugins/registry/consul/v3 v3.7.0
 ## explicit
 github.com/asim/go-micro/plugins/registry/consul/v3
@@ -182,6 +185,9 @@ github.com/golang/protobuf/ptypes
 github.com/golang/protobuf/ptypes/any
 github.com/golang/protobuf/ptypes/duration
 github.com/golang/protobuf/ptypes/timestamp
+# github.com/gomodule/redigo v2.0.0+incompatible
+github.com/gomodule/redigo/internal
+github.com/gomodule/redigo/redis
 # github.com/google/uuid v1.2.0
 github.com/google/uuid
 # github.com/hashicorp/consul/api v1.9.0

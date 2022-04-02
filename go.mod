@@ -1,8 +1,9 @@
-module go-micro-demo
+module bee-micro
 
 go 1.16
 
 require (
+	github.com/asim/go-micro/plugins/broker/redis/v3 v3.7.0
 	github.com/asim/go-micro/plugins/registry/consul/v3 v3.7.0
 	github.com/asim/go-micro/plugins/server/http/v3 v3.7.0
 	github.com/asim/go-micro/v3 v3.7.1

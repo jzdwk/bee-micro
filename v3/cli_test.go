@@ -1,12 +1,12 @@
 package v3
 
 import (
+	httpClient "bee-micro/v3/httpclient"
 	"context"
 	"github.com/asim/go-micro/plugins/registry/consul/v3"
 	"github.com/asim/go-micro/v3/client"
 	"github.com/asim/go-micro/v3/registry"
 	"github.com/asim/go-micro/v3/selector"
-	httpClient "go-micro-demo/v3/httpclient"
 	"testing"
 	"time"
 )

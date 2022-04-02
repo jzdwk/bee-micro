@@ -1,8 +1,8 @@
 package routers
 
 import (
+	"bee-micro/controllers"
 	"github.com/astaxie/beego"
-	"go-micro-demo/controllers"
 )
 
 func init() {
