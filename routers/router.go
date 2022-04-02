@@ -14,5 +14,6 @@ func init() {
 			),
 		),
 	)
-	beego.AddNamespace(ns)
+	mt := beego.NewNamespace("/metics", beego.NSInclude())
+	beego.AddNamespace(ns, mt)
 }

@@ -76,6 +76,7 @@ github.com/armon/go-radix v0.0.0-20180808171621-7fddfc383310/go.mod h1:ufUuZ+zHj
 github.com/armon/go-radix v1.0.0/go.mod h1:ufUuZ+zHj4x4TnLV4JWEpy2hxWSpsRywHrMgIH9cCH8=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPdPJAN/hZIm0C4OItdklCFmMRWYpio=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
+github.com/asim/go-micro/plugins/broker/memory/v3 v3.0.0-20210630062103-c13bb07171bc/go.mod h1:EH0EOjRcyefTt6Db72aX3My8dowi7QvTDaQc8AYqHjw=
 github.com/asim/go-micro/plugins/broker/redis/v3 v3.7.0 h1:qd6sSG9ttnSPeUsbbNM8bzXYM+g6hjj4Fqy8L2SPN8E=
 github.com/asim/go-micro/plugins/broker/redis/v3 v3.7.0/go.mod h1:Z9eO1wjs0cCLLPMGhiMJ2DA7UGxgM5TdviDqcX124sA=
 github.com/asim/go-micro/plugins/registry/consul/v3 v3.7.0 h1:1w2pWNUbzeyClqRIox7xv7BpyLRJpNiytG2zIeDiXvk=
@@ -84,6 +85,8 @@ github.com/asim/go-micro/plugins/registry/memory/v3 v3.0.0-20210630062103-c13bb0
 github.com/asim/go-micro/plugins/registry/memory/v3 v3.0.0-20210630062103-c13bb07171bc/go.mod h1:byk73o19+HiI5rX9PqFhY48v61lV8l+lnXRvRH5jlmE=
 github.com/asim/go-micro/plugins/server/http/v3 v3.7.0 h1:fQi/+U5jrDHIrnMJ+tT2Fb7oNdZOTQ059w9luhu9cQE=
 github.com/asim/go-micro/plugins/server/http/v3 v3.7.0/go.mod h1:Q4d8FKNG51oizDCzjl84aO3pVBiA/Py3q4CEZVPaGP0=
+github.com/asim/go-micro/plugins/wrapper/monitoring/prometheus/v3 v3.7.0 h1:yIGrCLxFTTamah9DyjM5j/GoZQ54bmc6jd69HHVYn/c=
+github.com/asim/go-micro/plugins/wrapper/monitoring/prometheus/v3 v3.7.0/go.mod h1:6uRIlWjXd2uhK9OMhLc+Crbx9Hm4DlwImHd/yw0cf3I=
 github.com/asim/go-micro/v3 v3.5.2-0.20210629124054-4929a7c16ecc/go.mod h1:cNGIIYQcp0qy+taNYmrBdaIHeqMWHV5ZH/FfQzfOyE8=
 github.com/asim/go-micro/v3 v3.5.2-0.20210630062103-c13bb07171bc/go.mod h1:cNGIIYQcp0qy+taNYmrBdaIHeqMWHV5ZH/FfQzfOyE8=
 github.com/asim/go-micro/v3 v3.7.1 h1:PCdAOFjSaG5LRulccEApGypMQMg4D7AGqaSd07/uo7k=
