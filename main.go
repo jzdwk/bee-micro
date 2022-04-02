@@ -25,13 +25,12 @@ var port = flag.String("port", "8010", "port")
 func main() {
 	//conf beego
 	beego.BConfig.CopyRequestBody = true
-	//beego.InsertFilter("/*",beego.AfterExec, mymetrics.Filter)
 	//consul
 	reg := consul.NewRegistry(func(options *registry.Options) {
 		options.Addrs = []string{"myecs.jzd:65085"}
 	})
 	//http server
-	serverName := fmt.Sprintf("http-demo-:%v", port)
+	serverName := fmt.Sprintf("http-demo")
 	serverID := uuid.Must(uuid.NewUUID()).String()
 	serverVersion := "v1.0"
 	srv := httpServer.NewServer(
@@ -43,6 +42,9 @@ func main() {
 		logs.Error(err.Error())
 		return
 	}
+	//filter doesn't work?
+	//beego.InsertFilter("/demo/*",beego.AfterExec, mymetrics.Filter)
+	//redis broker
 	if err := mybroker.Init(); err != nil {
 		return
 	}
@@ -56,7 +58,7 @@ func main() {
 		micro.Address(":8100"),
 		//service registry
 		micro.Registry(reg),
-		//msg broker
+		//msg broker, default http broker
 		micro.Broker(mybroker.RedisBk),
 		//metrics
 		micro.WrapHandler(promwrapper.NewHandlerWrapper(
@@ -79,7 +81,7 @@ func PrometheusBoot() {
 	http.Handle("/metrics", promhttp.Handler())
 	// 启动web服务，监听8085端口
 	go func() {
-		err := http.ListenAndServe("localhost:8085", nil)
+		err := http.ListenAndServe("192.168.182.133:8085", nil)
 		if err != nil {
 			log.Fatal("ListenAndServe: ", err)
 		}

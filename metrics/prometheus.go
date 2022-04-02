@@ -13,8 +13,9 @@ import (
 	"time"
 )
 
+var m = newPrometheusMonitor("prometheus", "http-demo")
+
 func Filter(c *context.Context) {
-	m := newPrometheusMonitor("bee-metrics", "http-demo-api")
 	relativePath := c.Request.URL.Path
 	start := time.Now()
 	reqSize := computeApproximateRequestSize(c.Request)
