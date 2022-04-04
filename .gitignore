@@ -20,3 +20,4 @@ commentsRouter*
 .idea
 # xml
 *.xml
+vendor

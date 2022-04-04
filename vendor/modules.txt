@@ -20,11 +20,22 @@ github.com/ProtonMail/go-crypto/openpgp/packet
 github.com/ProtonMail/go-crypto/openpgp/s2k
 # github.com/acomagu/bufpipe v1.0.3
 github.com/acomagu/bufpipe
+# github.com/afex/hystrix-go v0.0.0-20180502004556-fa1af6a1f4f5
+## explicit
+github.com/afex/hystrix-go/hystrix
+github.com/afex/hystrix-go/hystrix/metric_collector
+github.com/afex/hystrix-go/hystrix/rolling
 # github.com/armon/go-metrics v0.0.0-20180917152333-f0300d1749da
 github.com/armon/go-metrics
 # github.com/asim/go-micro/plugins/broker/redis/v3 v3.7.0
 ## explicit
 github.com/asim/go-micro/plugins/broker/redis/v3
+# github.com/asim/go-micro/plugins/config/encoder/yaml/v3 v3.7.0
+## explicit
+github.com/asim/go-micro/plugins/config/encoder/yaml/v3
+# github.com/asim/go-micro/plugins/config/source/consul/v3 v3.7.0
+## explicit
+github.com/asim/go-micro/plugins/config/source/consul/v3
 # github.com/asim/go-micro/plugins/registry/consul/v3 v3.7.0
 ## explicit
 github.com/asim/go-micro/plugins/registry/consul/v3
@@ -125,6 +136,8 @@ github.com/emirpasic/gods/utils
 github.com/fatih/color
 # github.com/fsnotify/fsnotify v1.4.9
 github.com/fsnotify/fsnotify
+# github.com/ghodss/yaml v1.0.0
+github.com/ghodss/yaml
 # github.com/go-git/gcfg v1.5.0
 github.com/go-git/gcfg
 github.com/go-git/gcfg/scanner
@@ -192,6 +205,7 @@ github.com/golang/protobuf/ptypes/timestamp
 github.com/gomodule/redigo/internal
 github.com/gomodule/redigo/redis
 # github.com/google/uuid v1.2.0
+## explicit
 github.com/google/uuid
 # github.com/hashicorp/consul/api v1.9.0
 github.com/hashicorp/consul/api

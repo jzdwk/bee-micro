@@ -57,6 +57,8 @@ github.com/Shopify/sarama v1.19.0/go.mod h1:FVkBWblsNy7DGZRfXLU0O9RCGt5g3g3yEuWX
 github.com/Shopify/toxiproxy v2.1.4+incompatible/go.mod h1:OXgGpZ6Cli1/URJOF1DMxUHB2q5Ap20/P/eIdh4G0pI=
 github.com/acomagu/bufpipe v1.0.3 h1:fxAGrHZTgQ9w5QqVItgzwj235/uYZYgbXitB+dLupOk=
 github.com/acomagu/bufpipe v1.0.3/go.mod h1:mxdxdup/WdsKVreO5GpW4+M/1CE2sMG4jeGJ2sYmHc4=
+github.com/afex/hystrix-go v0.0.0-20180502004556-fa1af6a1f4f5 h1:rFw4nCn9iMW+Vajsk51NtYIcwSTkXr+JGrMd36kTDJw=
+github.com/afex/hystrix-go v0.0.0-20180502004556-fa1af6a1f4f5/go.mod h1:SkGFH1ia65gfNATL8TAiHDNxPzPdmEL5uirI2Uyuz6c=
 github.com/akamai/AkamaiOPEN-edgegrid-golang v1.1.0/go.mod h1:kX6YddBkXqqywAe8c9LyvgTCyFuZCTMF4cRPQhc3Fy8=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
@@ -79,6 +81,10 @@ github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkY
 github.com/asim/go-micro/plugins/broker/memory/v3 v3.0.0-20210630062103-c13bb07171bc/go.mod h1:EH0EOjRcyefTt6Db72aX3My8dowi7QvTDaQc8AYqHjw=
 github.com/asim/go-micro/plugins/broker/redis/v3 v3.7.0 h1:qd6sSG9ttnSPeUsbbNM8bzXYM+g6hjj4Fqy8L2SPN8E=
 github.com/asim/go-micro/plugins/broker/redis/v3 v3.7.0/go.mod h1:Z9eO1wjs0cCLLPMGhiMJ2DA7UGxgM5TdviDqcX124sA=
+github.com/asim/go-micro/plugins/config/encoder/yaml/v3 v3.7.0 h1:sjLZwrRU7CNduI1Xe7j6HT+/Kfeugn90ASdxh+Ms1M8=
+github.com/asim/go-micro/plugins/config/encoder/yaml/v3 v3.7.0/go.mod h1:yXyEK7d097bwYcWdjZHwX07kC9kKNSNKmo9z2Kf8Zj4=
+github.com/asim/go-micro/plugins/config/source/consul/v3 v3.7.0 h1:tCeJUNWynAVkAjcNDt0BEEoRt0Q+nnS4WF55RPZQXOQ=
+github.com/asim/go-micro/plugins/config/source/consul/v3 v3.7.0/go.mod h1:wUT7aPyxs7CphPaFeVEVEAsiyEsz6U2Athz4CE4vRGM=
 github.com/asim/go-micro/plugins/registry/consul/v3 v3.7.0 h1:1w2pWNUbzeyClqRIox7xv7BpyLRJpNiytG2zIeDiXvk=
 github.com/asim/go-micro/plugins/registry/consul/v3 v3.7.0/go.mod h1:qNMQpe5Rjw5Ax501q3B2xMUvc+MgFzvbPmkiVF+tHwI=
 github.com/asim/go-micro/plugins/registry/memory/v3 v3.0.0-20210630062103-c13bb07171bc h1:tDva/ON5dAKeND5j+CSR/wr22280KdPZjOzZxUcWFL8=
@@ -189,6 +195,7 @@ github.com/fsnotify/fsnotify v1.4.9 h1:hsms1Qyu0jgnwNXIxa+/V/PDsU6CfLf6CNO8H7IWo
 github.com/fsnotify/fsnotify v1.4.9/go.mod h1:znqG4EE+3YCdAaPaxE2ZRY/06pZUdp0tY4IgpuI1SZQ=
 github.com/fsouza/go-dockerclient v1.7.3/go.mod h1:8xfZB8o9SptLNJ13VoV5pMiRbZGWkU/Omu5VOu/KC9Y=
 github.com/getkin/kin-openapi v0.13.0/go.mod h1:WGRs2ZMM1Q8LR1QBEwUxC6RJEfaBcD0s+pcEVXFuAjw=
+github.com/ghodss/yaml v1.0.0 h1:wQHKEahhL6wmXdzwWG11gIVCkOv05bNOh+Rxn0yngAk=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
 github.com/glendc/gopher-json v0.0.0-20170414221815-dc4743023d0c/go.mod h1:Gja1A+xZ9BoviGJNA2E9vFkPjjsl+CoJxSXiQM1UXtw=
 github.com/gliderlabs/ssh v0.2.2 h1:6zsha5zo/TWhRhwqCD3+EarCAgZ2yN28ipRnGPnwkI0=

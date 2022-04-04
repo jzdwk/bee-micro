@@ -219,7 +219,7 @@ func (h *httpClient) NewMessage(topic string, msg interface{}, opts ...client.Me
 	return newHTTPMessage(topic, msg, "application/proto", opts...)
 }
 
-func (h *httpClient) NewRequest(serviceName,  api string, req interface{}, reqOpts ...client.RequestOption) client.Request {
+func (h *httpClient) NewRequest(serviceName, api string, req interface{}, reqOpts ...client.RequestOption) client.Request {
 	return newHTTPRequest(serviceName, api, req, h.opts.ContentType, reqOpts...)
 }
 

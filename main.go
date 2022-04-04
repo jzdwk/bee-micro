@@ -2,6 +2,7 @@ package main
 
 import (
 	mybroker "bee-micro/broker"
+	"bee-micro/config"
 	_ "bee-micro/routers"
 	"flag"
 	"fmt"
@@ -23,11 +24,17 @@ import (
 var port = flag.String("port", "8010", "port")
 
 func main() {
+	//load config from consul
+	cfg, _ := config.GetConfig()
+	conf, err := config.GetConsul(cfg, "consul")
+	if err != nil {
+		return
+	}
 	//conf beego
 	beego.BConfig.CopyRequestBody = true
 	//consul
 	reg := consul.NewRegistry(func(options *registry.Options) {
-		options.Addrs = []string{"myecs.jzd:65085"}
+		options.Addrs = []string{conf.Consul.Address}
 	})
 	//http server
 	serverName := fmt.Sprintf("http-demo")
@@ -81,7 +88,7 @@ func PrometheusBoot() {
 	http.Handle("/metrics", promhttp.Handler())
 	// 启动web服务，监听8085端口
 	go func() {
-		err := http.ListenAndServe("192.168.182.133:8085", nil)
+		err := http.ListenAndServe("localhost:8085", nil)
 		if err != nil {
 			log.Fatal("ListenAndServe: ", err)
 		}

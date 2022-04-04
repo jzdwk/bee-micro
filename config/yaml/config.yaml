@@ -1,0 +1,10 @@
+#ServerName
+#ServerPort
+config:
+  server:
+    name:
+      go-micro-demo
+    address:
+      :8102
+  consul:
+    address: myecs.jzd:65085

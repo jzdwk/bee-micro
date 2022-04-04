@@ -1,0 +1,11 @@
+{
+    "info": {
+        "server":{
+            "name": "go-micro-demo",
+            "address": ":8102"
+        },
+        "consul": {
+            "address": "192.168.143.146:8500"
+        }
+    }
+}

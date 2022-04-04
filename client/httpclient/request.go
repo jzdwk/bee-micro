@@ -25,7 +25,7 @@ func newHTTPRequest(service, api string, request interface{}, contentType string
 		contentType = opts.ContentType
 	}
 	//GET:/demo
-	apiInfo := strings.Split(api,":")
+	apiInfo := strings.Split(api, ":")
 
 	return &httpRequest{
 		service:     service,
