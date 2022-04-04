@@ -16,3 +16,7 @@
 
 # router file
 commentsRouter*
+# goland
+.idea
+# xml
+*.xml
