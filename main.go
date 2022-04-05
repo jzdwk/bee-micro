@@ -34,7 +34,7 @@ func main() {
 	beego.BConfig.CopyRequestBody = true
 	//consul
 	reg := consul.NewRegistry(func(options *registry.Options) {
-		options.Addrs = []string{conf.Consul.Address}
+		options.Addrs = []string{conf.Address}
 	})
 	//http server
 	serverName := fmt.Sprintf("http-demo")
@@ -73,6 +73,9 @@ func main() {
 			promwrapper.ServiceVersion(serverVersion),
 			promwrapper.ServiceID(serverID),
 		)),
+		//circuit breaker&limit, todo server wrapper
+		//micro.WrapHandler(wrappers.NewHystrixServerWrapper()),
+
 		//tracing
 		//logging
 	)

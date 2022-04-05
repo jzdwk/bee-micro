@@ -17,11 +17,11 @@ func TestHttpCli(t *testing.T) {
 	//读取配置中心
 	cfg, _ := config.GetConfig()
 
-	info, _ := config.GetConsul(cfg, "info")
+	info, _ := config.GetConsul(cfg, "consul")
 
 	//get service reg
 	reg := consul.NewRegistry(func(options *registry.Options) {
-		options.Addrs = []string{info.Consul.Address}
+		options.Addrs = []string{info.Address}
 	})
 
 	//get service selector
@@ -39,7 +39,7 @@ func TestHttpCli(t *testing.T) {
 	)
 
 	doGetRequest(t, c)
-	doPostRequest(t, c)
+	//doPostRequest(t, c)
 }
 
 func doGetRequest(t *testing.T, c client.Client) {
