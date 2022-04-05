@@ -21,3 +21,4 @@ commentsRouter*
 # xml
 *.xml
 vendor
+*.tmp
