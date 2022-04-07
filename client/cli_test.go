@@ -2,8 +2,7 @@ package client
 
 import (
 	httpClient "bee-micro/client/httpclient"
-	"bee-micro/client/wrappers"
-	"bee-micro/config"
+	client2 "bee-micro/wrappers/client"
 	"context"
 	"fmt"
 	"github.com/asim/go-micro/plugins/registry/consul/v3"
@@ -15,14 +14,9 @@ import (
 )
 
 func TestHttpCli(t *testing.T) {
-	//读取配置中心
-	cfg, _ := config.GetConfig()
-
-	info, _ := config.GetConsul(cfg, "consul")
-
 	//get service reg
 	reg := consul.NewRegistry(func(options *registry.Options) {
-		options.Addrs = []string{info.Address}
+		options.Addrs = []string{"myecs.jzd:65085"}
 	})
 
 	//get service selector
@@ -36,13 +30,13 @@ func TestHttpCli(t *testing.T) {
 		client.DialTimeout(time.Second*10),
 		client.RequestTimeout(time.Second*10),
 		//3. hystrix breaker
-		client.Wrap(wrappers.NewHystrixWrapper()),
+		client.Wrap(client2.NewHystrixWrapper()),
 		//4. client rate-limit
 		//client.Wrap(ratelimiter.NewClientWrapper(ratelimit.NewBucket(time.Second,int64(1)),false)),
 	)
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 10; i++ {
 		doGetRequest(t, c)
-		doPostRequest(t, c)
+		//doPostRequest(t, c)
 	}
 	//doPostRequest(t, c)
 }

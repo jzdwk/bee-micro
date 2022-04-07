@@ -1,13 +1,10 @@
-package wrappers
+package client
 
 import (
 	"context"
-	"github.com/asim/go-micro/v3/server"
-	"github.com/astaxie/beego/logs"
-	"net/http"
-
 	"github.com/afex/hystrix-go/hystrix"
 	"github.com/asim/go-micro/v3/client"
+	"github.com/astaxie/beego/logs"
 )
 
 type clientWrapper struct {
@@ -43,13 +40,4 @@ func NewHystrixWrapper() client.Wrapper {
 	return func(c client.Client) client.Client {
 		return &clientWrapper{c}
 	}
-}
-
-//NewHystrixServerWrapper
-func NewHystrixServerWrapper(opt interface{}) server.HandlerWrapper {
-	return nil
-}
-
-type serverWrapper struct {
-	http.Server
 }

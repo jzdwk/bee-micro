@@ -4,17 +4,18 @@ import (
 	mybroker "bee-micro/broker"
 	"bee-micro/config"
 	_ "bee-micro/routers"
+	srvWrapper "bee-micro/wrappers/server"
 	"flag"
 	"fmt"
 	"github.com/asim/go-micro/plugins/registry/consul/v3"
 	httpServer "github.com/asim/go-micro/plugins/server/http/v3"
-	promwrapper "github.com/asim/go-micro/plugins/wrapper/monitoring/prometheus/v3"
 	"github.com/asim/go-micro/v3"
 	"github.com/asim/go-micro/v3/registry"
 	"github.com/asim/go-micro/v3/server"
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/google/uuid"
+	"github.com/juju/ratelimit"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
 	"net/http"
@@ -22,6 +23,7 @@ import (
 )
 
 var port = flag.String("port", "8010", "port")
+var register = "myecs.jzd:65085"
 
 func main() {
 	//load config from consul
@@ -30,11 +32,12 @@ func main() {
 	if err != nil {
 		return
 	}
+	logs.Info("read from config center, value %+v", conf)
 	//conf beego
 	beego.BConfig.CopyRequestBody = true
 	//consul
 	reg := consul.NewRegistry(func(options *registry.Options) {
-		options.Addrs = []string{conf.Address}
+		options.Addrs = []string{register}
 	})
 	//http server
 	serverName := fmt.Sprintf("http-demo")
@@ -45,15 +48,17 @@ func main() {
 		server.Address(fmt.Sprintf("localhost:%v", port)),
 		server.Broker(mybroker.RedisBk),
 		//wrap in server
-		/*server.WrapHandler(limiter.NewHandlerWrapper(ratelimit.NewBucket(time.Second,int64(1)),false)),
+		/*		server.WrapHandler(promwrapper.NewHandlerWrapper(
+				promwrapper.ServiceName(serverName),
+				promwrapper.ServiceVersion(serverVersion),
+				promwrapper.ServiceID(serverID)))*/)
 
-		server.WrapHandler(promwrapper.NewHandlerWrapper(
-			promwrapper.ServiceName(serverName),
-			promwrapper.ServiceVersion(serverVersion),
-			promwrapper.ServiceID(serverID)),*/
-	)
-	//http controller
-	if err := srv.Handle(srv.NewHandler(beego.BeeApp.Handlers)); err != nil {
+	//rate limit
+	apiWithRateLimit := srvWrapper.NewRateLimitHandlerWrapper(beego.BeeApp.Handlers, ratelimit.NewBucketWithRate(float64(10), int64(10)), false)
+	opt := srvWrapper.Options{Name: serverName, ID: serverID, Version: serverVersion}
+	apiWithMetric := srvWrapper.NewPrometheusHandlerWrapper(apiWithRateLimit, opt)
+	//metric
+	if err := srv.Handle(srv.NewHandler(apiWithMetric)); err != nil {
 		logs.Error(err.Error())
 		return
 	}
@@ -75,22 +80,13 @@ func main() {
 		micro.Registry(reg),
 		//msg broker, default http broker
 		micro.Broker(mybroker.RedisBk),
-		//metrics
-		micro.WrapHandler(promwrapper.NewHandlerWrapper(
-			promwrapper.ServiceName(serverName),
-			promwrapper.ServiceVersion(serverVersion),
-			promwrapper.ServiceID(serverID))),
-
-		//circuit breaker&limit, todo server wrapper
-		//micro.WrapHandler(wrappers.NewHystrixServerWrapper()),*/
-		//rate limit, 10 request per second, 50 alive requests in total
 		//tracing
 		//logging
 	)
 	go PrometheusBoot()
 	service.Init()
 	if err := service.Run(); err != nil {
-		logs.Error("init service err")
+		logs.Error("init service err. err %v", err.Error())
 		return
 	}
 }
