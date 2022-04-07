@@ -6,9 +6,12 @@
 package server
 
 import (
+	"bee-micro/controllers"
+	"encoding/json"
 	"github.com/asim/go-micro/v3/errors"
 	"github.com/astaxie/beego/logs"
 	"github.com/juju/ratelimit"
+	"io"
 	"net/http"
 	"time"
 )
@@ -19,8 +22,12 @@ func NewRateLimitHandlerWrapper(h http.Handler, b *ratelimit.Bucket, wait bool) 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := fn(); err != nil {
 			logs.Error("rate-limit err, %v", err.Error())
-			w.WriteHeader(500)
-			w.Write([]byte(err.Error()))
+			rsp := new(controllers.Resp)
+			rsp.Result = "fail"
+			rsp.Message = "too many requests"
+			retJson, _ := json.Marshal(rsp)
+			io.WriteString(w, string(retJson))
+			return
 		}
 		h.ServeHTTP(w, r)
 	})

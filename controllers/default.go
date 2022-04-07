@@ -14,14 +14,16 @@ type MainController struct {
 	beego.Controller
 }
 
-type Message struct {
-	Method  string
-	Message string
-}
-
+//test post body
 type PostInfo struct {
 	Name string
 	Age  int
+}
+
+//common resp
+type Resp struct {
+	Result  string
+	Message string
 }
 
 // @Title get test
@@ -31,7 +33,7 @@ type PostInfo struct {
 func (c *MainController) Get() {
 	message := c.Ctx.Input.Param(":message")
 	c.Ctx.Output.SetStatus(http.StatusOK)
-	msg := Message{Method: c.Ctx.Request.Method, Message: message}
+	msg := Resp{Result: "success", Message: message}
 	c.Data["json"] = msg
 	c.ServeJSON()
 	//time.Sleep(20 * time.Second)
@@ -60,7 +62,7 @@ func (c *MainController) Post() {
 		c.ServeJSON()
 	}
 	c.Ctx.Output.SetStatus(http.StatusOK)
-	c.Data["json"] = Message{Method: c.Ctx.Request.Method, Message: message}
+	c.Data["json"] = Resp{Result: "success", Message: message}
 	c.ServeJSON()
 	//do it in beego filter
 	metrics.Filter(c.Ctx)

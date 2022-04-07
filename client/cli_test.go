@@ -1,7 +1,8 @@
 package client
 
 import (
-	httpClient "bee-micro/client/httpclient"
+	httpClient "bee-micro/client/http"
+	"bee-micro/controllers"
 	client2 "bee-micro/wrappers/client"
 	"context"
 	"fmt"
@@ -43,31 +44,24 @@ func TestHttpCli(t *testing.T) {
 
 func doGetRequest(t *testing.T, c client.Client) {
 	request := c.NewRequest("http-demo", "GET:/demo/hello/for-test/get", nil, client.WithContentType("application/json"))
-	var response Resp
+	var response controllers.Resp
 	if err := c.Call(context.Background(), request, &response); err != nil {
 		t.Error(err.Error())
 		return
 	}
-	t.Log(fmt.Printf("do get request success, %v", response))
+	t.Log(fmt.Printf("do get request success, %s, %s", response.Result, response.Message))
 }
 
 func doPostRequest(t *testing.T, c client.Client) {
-
 	req := struct {
 		Name string
 		Age  int
 	}{"jzd", 123}
 	request := c.NewRequest("http-demo", "POST:/demo/hello/for-test/post", req, client.WithContentType("application/json"))
-	var response Resp
+	var response controllers.Resp
 	if err := c.Call(context.Background(), request, &response); err != nil {
 		t.Error(err.Error())
 		return
 	}
-	t.Log("do post request success")
-}
-
-//msg
-type Resp struct {
-	Method  string
-	Message string
+	t.Log(fmt.Printf("do get request success, %s, %s", response.Result, response.Message))
 }

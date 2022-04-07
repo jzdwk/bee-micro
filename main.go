@@ -54,7 +54,7 @@ func main() {
 				promwrapper.ServiceID(serverID)))*/)
 
 	//rate limit
-	apiWithRateLimit := srvWrapper.NewRateLimitHandlerWrapper(beego.BeeApp.Handlers, ratelimit.NewBucketWithRate(float64(10), int64(10)), false)
+	apiWithRateLimit := srvWrapper.NewRateLimitHandlerWrapper(beego.BeeApp.Handlers, ratelimit.NewBucketWithRate(float64(1), int64(1)), false)
 	opt := srvWrapper.Options{Name: serverName, ID: serverID, Version: serverVersion}
 	apiWithMetric := srvWrapper.NewPrometheusHandlerWrapper(apiWithRateLimit, opt)
 	//metric
