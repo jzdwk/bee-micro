@@ -8,7 +8,6 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"net/http"
-	"time"
 )
 
 type MainController struct {
@@ -35,7 +34,7 @@ func (c *MainController) Get() {
 	msg := Message{Method: c.Ctx.Request.Method, Message: message}
 	c.Data["json"] = msg
 	c.ServeJSON()
-	time.Sleep(20 * time.Second)
+	//time.Sleep(20 * time.Second)
 	//do it in beego filter
 	metrics.Filter(c.Ctx)
 }

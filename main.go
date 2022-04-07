@@ -43,6 +43,14 @@ func main() {
 	srv := httpServer.NewServer(
 		server.Name(serverName),
 		server.Address(fmt.Sprintf("localhost:%v", port)),
+		server.Broker(mybroker.RedisBk),
+		//wrap in server
+		/*server.WrapHandler(limiter.NewHandlerWrapper(ratelimit.NewBucket(time.Second,int64(1)),false)),
+
+		server.WrapHandler(promwrapper.NewHandlerWrapper(
+			promwrapper.ServiceName(serverName),
+			promwrapper.ServiceVersion(serverVersion),
+			promwrapper.ServiceID(serverID)),*/
 	)
 	//http controller
 	if err := srv.Handle(srv.NewHandler(beego.BeeApp.Handlers)); err != nil {
@@ -71,11 +79,11 @@ func main() {
 		micro.WrapHandler(promwrapper.NewHandlerWrapper(
 			promwrapper.ServiceName(serverName),
 			promwrapper.ServiceVersion(serverVersion),
-			promwrapper.ServiceID(serverID),
-		)),
-		//circuit breaker&limit, todo server wrapper
-		//micro.WrapHandler(wrappers.NewHystrixServerWrapper()),
+			promwrapper.ServiceID(serverID))),
 
+		//circuit breaker&limit, todo server wrapper
+		//micro.WrapHandler(wrappers.NewHystrixServerWrapper()),*/
+		//rate limit, 10 request per second, 50 alive requests in total
 		//tracing
 		//logging
 	)

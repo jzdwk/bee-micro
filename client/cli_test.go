@@ -5,6 +5,7 @@ import (
 	"bee-micro/client/wrappers"
 	"bee-micro/config"
 	"context"
+	"fmt"
 	"github.com/asim/go-micro/plugins/registry/consul/v3"
 	"github.com/asim/go-micro/v3/client"
 	"github.com/asim/go-micro/v3/registry"
@@ -34,11 +35,15 @@ func TestHttpCli(t *testing.T) {
 		//2. timeout setting
 		client.DialTimeout(time.Second*10),
 		client.RequestTimeout(time.Second*10),
-		//3. hystrix
+		//3. hystrix breaker
 		client.Wrap(wrappers.NewHystrixWrapper()),
+		//4. client rate-limit
+		//client.Wrap(ratelimiter.NewClientWrapper(ratelimit.NewBucket(time.Second,int64(1)),false)),
 	)
-
-	doGetRequest(t, c)
+	for i := 0; i < 100; i++ {
+		doGetRequest(t, c)
+		doPostRequest(t, c)
+	}
 	//doPostRequest(t, c)
 }
 
@@ -49,7 +54,7 @@ func doGetRequest(t *testing.T, c client.Client) {
 		t.Error(err.Error())
 		return
 	}
-	t.Log("do get request success")
+	t.Log(fmt.Printf("do get request success, %v", response))
 }
 
 func doPostRequest(t *testing.T, c client.Client) {
