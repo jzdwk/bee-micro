@@ -1,10 +1,15 @@
-package server
+/*
+@Time : 2022/4/8
+@Author : jzd
+@Project: bee-micro
+*/
+package filter
 
 import (
 	"fmt"
 	"github.com/asim/go-micro/v3/logger"
+	"github.com/astaxie/beego/context"
 	"github.com/prometheus/client_golang/prometheus"
-	"net/http"
 )
 
 var (
@@ -22,8 +27,6 @@ type Options struct {
 	Version string
 	ID      string
 }
-
-type Option func(*Options)
 
 func init() {
 	if opsCounter == nil {
@@ -83,25 +86,16 @@ func init() {
 
 }
 
-type wrapper struct {
-	options Options
-}
-
-func NewPrometheusHandlerWrapper(h http.Handler, options Options) http.Handler {
-	w := &wrapper{
-		options: options,
+func (op *Options) Filter(ctx *context.Context) {
+	endpoint := ctx.Request.RemoteAddr
+	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
+		us := v * 1000000 // make microseconds
+		timeCounterSummary.WithLabelValues(op.Name, op.Version, op.ID, endpoint).Observe(us)
+		timeCounterHistogram.WithLabelValues(op.Name, op.Version, op.ID, endpoint).Observe(v)
+	}))
+	defer timer.ObserveDuration()
+	if ctx.ResponseWriter.Status > 400 {
+		opsCounter.WithLabelValues(op.Name, op.Version, op.ID, endpoint, "failure").Inc()
 	}
-	return http.HandlerFunc(func(rsp http.ResponseWriter, req *http.Request) {
-		endpoint := req.RemoteAddr
-		timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
-			us := v * 1000000 // make microseconds
-			timeCounterSummary.WithLabelValues(w.options.Name, w.options.Version, w.options.ID, endpoint).Observe(us)
-			timeCounterHistogram.WithLabelValues(w.options.Name, w.options.Version, w.options.ID, endpoint).Observe(v)
-		}))
-		defer timer.ObserveDuration()
-		h.ServeHTTP(rsp, req)
-		//can not get rsp message
-		opsCounter.WithLabelValues(w.options.Name, w.options.Version, w.options.ID, endpoint, "success").Inc()
-		//opsCounter.WithLabelValues(w.options.Name, w.options.Version, w.options.ID, endpoint, "failure").Inc()
-	})
+	opsCounter.WithLabelValues(op.Name, op.Version, op.ID, endpoint, "success").Inc()
 }

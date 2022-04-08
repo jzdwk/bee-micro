@@ -16,6 +16,7 @@ import (
 	"github.com/asim/go-micro/v3/server"
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
+	"github.com/google/uuid"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
@@ -48,17 +49,12 @@ func main() {
 	})
 	//http server
 	serverName := fmt.Sprintf("http-demo")
-	//serverID := uuid.Must(uuid.NewUUID()).String()
-	//serverVersion := "v1.0"
+	serverID := uuid.Must(uuid.NewUUID()).String()
+	serverVersion := "v1.0"
 	srv := httpServer.NewServer(
 		server.Name(serverName),
 		server.Address(fmt.Sprintf("localhost:%v", port)),
-		server.Broker(mybroker.RedisBk),
-		//wrap in server
-		/*		server.WrapHandler(promwrapper.NewHandlerWrapper(
-				promwrapper.ServiceName(serverName),
-				promwrapper.ServiceVersion(serverVersion),
-				promwrapper.ServiceID(serverID)))*/)
+		server.Broker(mybroker.RedisBk))
 
 	//jaeger
 	jaegerTracer, closer, err := tracer.NewTracer(serverName, jaeger)
@@ -74,14 +70,16 @@ func main() {
 		logs.Error("new rate limit filter err, %v", err.Error())
 		return
 	}
-	pr := filter.NewPrometheusMonitor("prometheus", serverName)
+	//pr := filter.NewPrometheusMonitor("prometheus", serverName)
 	beego.InsertFilter("/demo/*", beego.BeforeRouter, rl.Filter, false)
-	beego.InsertFilter("/demo/*", beego.FinishRouter, pr.Filter, false)
-	//rate limit
+	//beego.InsertFilter("/demo/*", beego.FinishRouter, pr.Filter, false)
+	op := filter.Options{Name: serverName, ID: serverID, Version: serverVersion}
+	beego.InsertFilter("/demo/*", beego.FinishRouter, op.Filter, false)
+
+	//wrapper impl
 	/*	apiWithRateLimit := srvWrapper.NewRateLimitHandlerWrapper(beego.BeeApp.Handlers, ratelimit.NewBucketWithRate(float64(1), int64(1)), false)
 		opt := srvWrapper.Options{Name: serverName, ID: serverID, Version: serverVersion}
 		apiWithMetric := srvWrapper.NewPrometheusHandlerWrapper(apiWithRateLimit, opt)*/
-	//metric
 	if err := srv.Handle(srv.NewHandler(beego.BeeApp.Handlers)); err != nil {
 		logs.Error("new http server handler err, %v", err.Error())
 		return
