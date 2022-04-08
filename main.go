@@ -35,7 +35,7 @@ func main() {
 		logs.Error("init consul config center err, %v", err.Error())
 		return
 	}
-	conf, err := config.GetConsul()
+	conf, err := config.GetService()
 	if err != nil {
 		logs.Error("get consul from config center err, %v", err.Error())
 		return
@@ -64,14 +64,14 @@ func main() {
 	}
 	defer closer.Close()
 	opentracing.SetGlobalTracer(jaegerTracer)
-
 	rl, err := filter.NewRateLimit()
 	if err != nil {
 		logs.Error("new rate limit filter err, %v", err.Error())
 		return
 	}
-	//pr := filter.NewPrometheusMonitor("prometheus", serverName)
 	beego.InsertFilter("/demo/*", beego.BeforeRouter, rl.Filter, false)
+	// two prometheus impl
+	//pr := filter.NewPrometheusMonitor("prometheus", serverName)
 	//beego.InsertFilter("/demo/*", beego.FinishRouter, pr.Filter, false)
 	op := filter.Options{Name: serverName, ID: serverID, Version: serverVersion}
 	beego.InsertFilter("/demo/*", beego.FinishRouter, op.Filter, false)

@@ -56,7 +56,11 @@ type metric struct {
 	Address string `json:"address"`
 }
 
-type Consul struct {
+type service struct {
+	Address string `json:"address"`
+}
+
+type kong struct {
 	Address string `json:"address"`
 }
 
@@ -66,11 +70,11 @@ type rateLimit struct {
 	Wait     bool    `json:"wait" default:"false"`
 }
 
-// 获取Consul
-func GetConsul() (*Consul, error) {
-	conf := &Consul{}
+// 获取Service
+func GetService() (*service, error) {
+	conf := &service{}
 	//获取配置
-	err := AppConfig.Get("consul").Scan(conf)
+	err := AppConfig.Get("service").Scan(conf)
 	if err != nil {
 		return nil, err
 	}
@@ -93,6 +97,17 @@ func GetMetric() (*metric, error) {
 	conf := &metric{}
 	//获取配置
 	err := AppConfig.Get("metric").Scan(conf)
+	if err != nil {
+		return nil, err
+	}
+	return conf, nil
+}
+
+// 获取Kong
+func GetKong() (*kong, error) {
+	conf := &kong{}
+	//获取配置
+	err := AppConfig.Get("kong").Scan(conf)
 	if err != nil {
 		return nil, err
 	}

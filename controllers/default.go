@@ -2,7 +2,9 @@ package controllers
 
 import (
 	mybroker "bee-micro/broker"
+	"bee-micro/config"
 	"encoding/json"
+	"fmt"
 	"github.com/asim/go-micro/v3/broker"
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
@@ -31,13 +33,13 @@ type Resp struct {
 // @router /:message/get [get]
 func (c *MainController) Get() {
 	message := c.Ctx.Input.Param(":message")
+	logs.Info("get param from uri, %s", message)
 	c.Ctx.Output.SetStatus(http.StatusOK)
-	msg := Resp{Result: "success", Message: message}
+	conf, _ := config.GetKong()
+	msg := Resp{Result: "success", Message: fmt.Sprintf("kong address from config center:[%s]", conf.Address)}
 	c.Data["json"] = msg
 	c.ServeJSON()
 	//time.Sleep(20 * time.Second)
-	//do it in beego filter
-	//prometheus.Filter(c.Ctx)
 }
 
 // @Title post test
@@ -63,6 +65,4 @@ func (c *MainController) Post() {
 	c.Ctx.Output.SetStatus(http.StatusOK)
 	c.Data["json"] = Resp{Result: "success", Message: message}
 	c.ServeJSON()
-	//do it in beego filter
-	//prometheus.Filter(c.Ctx)
 }
