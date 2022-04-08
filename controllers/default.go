@@ -2,7 +2,6 @@ package controllers
 
 import (
 	mybroker "bee-micro/broker"
-	"bee-micro/metrics"
 	"encoding/json"
 	"github.com/asim/go-micro/v3/broker"
 	"github.com/astaxie/beego"
@@ -38,7 +37,7 @@ func (c *MainController) Get() {
 	c.ServeJSON()
 	//time.Sleep(20 * time.Second)
 	//do it in beego filter
-	metrics.Filter(c.Ctx)
+	//prometheus.Filter(c.Ctx)
 }
 
 // @Title post test
@@ -65,5 +64,5 @@ func (c *MainController) Post() {
 	c.Data["json"] = Resp{Result: "success", Message: message}
 	c.ServeJSON()
 	//do it in beego filter
-	metrics.Filter(c.Ctx)
+	//prometheus.Filter(c.Ctx)
 }

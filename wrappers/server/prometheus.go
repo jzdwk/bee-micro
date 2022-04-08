@@ -1,11 +1,9 @@
 package server
 
 import (
-	"context"
 	"fmt"
 	"github.com/asim/go-micro/v3/client"
 	"github.com/asim/go-micro/v3/logger"
-	"github.com/asim/go-micro/v3/server"
 	"github.com/prometheus/client_golang/prometheus"
 	"net/http"
 )
@@ -129,26 +127,4 @@ func NewPrometheusHandlerWrapper(h http.Handler, options Options) http.Handler {
 		opsCounter.WithLabelValues(w.options.Name, w.options.Version, w.options.ID, endpoint, "success").Inc()
 		//opsCounter.WithLabelValues(w.options.Name, w.options.Version, w.options.ID, endpoint, "failure").Inc()
 	})
-}
-
-func (w *wrapper) HandlerFunc(fn server.HandlerFunc) server.HandlerFunc {
-	return func(ctx context.Context, req server.Request, rsp interface{}) error {
-		endpoint := req.Endpoint()
-
-		timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
-			us := v * 1000000 // make microseconds
-			timeCounterSummary.WithLabelValues(w.options.Name, w.options.Version, w.options.ID, endpoint).Observe(us)
-			timeCounterHistogram.WithLabelValues(w.options.Name, w.options.Version, w.options.ID, endpoint).Observe(v)
-		}))
-		defer timer.ObserveDuration()
-
-		err := fn(ctx, req, rsp)
-		if err == nil {
-			opsCounter.WithLabelValues(w.options.Name, w.options.Version, w.options.ID, endpoint, "success").Inc()
-		} else {
-			opsCounter.WithLabelValues(w.options.Name, w.options.Version, w.options.ID, endpoint, "failure").Inc()
-		}
-
-		return err
-	}
 }

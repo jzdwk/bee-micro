@@ -1,3 +1,5 @@
+# github.com/HdrHistogram/hdrhistogram-go v1.1.2
+## explicit
 # github.com/Microsoft/go-winio v0.5.0
 github.com/Microsoft/go-winio
 github.com/Microsoft/go-winio/pkg/guid
@@ -39,20 +41,14 @@ github.com/asim/go-micro/plugins/config/source/consul/v3
 # github.com/asim/go-micro/plugins/registry/consul/v3 v3.7.0
 ## explicit
 github.com/asim/go-micro/plugins/registry/consul/v3
+# github.com/asim/go-micro/plugins/registry/memory/v3 v3.0.0-20210630062103-c13bb07171bc
+## explicit
 # github.com/asim/go-micro/plugins/server/http/v3 v3.7.0
 ## explicit
 github.com/asim/go-micro/plugins/server/http/v3
-# github.com/asim/go-micro/plugins/transport/memory/v3 v3.0.0-20210630062103-c13bb07171bc
+# github.com/asim/go-micro/plugins/wrapper/trace/opentracing/v3 v3.7.0
 ## explicit
-github.com/asim/go-micro/plugins/transport/memory/v3
-# github.com/asim/go-micro/plugins/wrapper/monitoring/prometheus/v3 v3.7.0
-## explicit
-github.com/asim/go-micro/plugins/wrapper/monitoring/prometheus/v3
-# github.com/asim/go-micro/plugins/wrapper/ratelimiter/ratelimit/v3 v3.7.0
-## explicit
-github.com/asim/go-micro/plugins/wrapper/ratelimiter/ratelimit/v3
-# github.com/asim/go-micro/plugins/wrapper/ratelimiter/uber/v3 v3.7.0
-## explicit
+github.com/asim/go-micro/plugins/wrapper/trace/opentracing/v3
 # github.com/asim/go-micro/v3 v3.7.1
 ## explicit
 github.com/asim/go-micro/v3
@@ -260,6 +256,11 @@ github.com/nxadm/tail/ratelimiter
 github.com/nxadm/tail/util
 github.com/nxadm/tail/watch
 github.com/nxadm/tail/winfile
+# github.com/opentracing/opentracing-go v1.2.0
+## explicit
+github.com/opentracing/opentracing-go
+github.com/opentracing/opentracing-go/ext
+github.com/opentracing/opentracing-go/log
 # github.com/oxtoacart/bpool v0.0.0-20190530202638-03653db5a59c
 github.com/oxtoacart/bpool
 # github.com/patrickmn/go-cache v2.1.0+incompatible
@@ -289,10 +290,40 @@ github.com/sergi/go-diff/diffmatchpatch
 github.com/shiena/ansicolor
 # github.com/shurcooL/sanitized_anchor_name v1.0.0
 github.com/shurcooL/sanitized_anchor_name
+# github.com/uber/jaeger-client-go v2.30.0+incompatible
+## explicit
+github.com/uber/jaeger-client-go
+github.com/uber/jaeger-client-go/config
+github.com/uber/jaeger-client-go/internal/baggage
+github.com/uber/jaeger-client-go/internal/baggage/remote
+github.com/uber/jaeger-client-go/internal/reporterstats
+github.com/uber/jaeger-client-go/internal/spanlog
+github.com/uber/jaeger-client-go/internal/throttler
+github.com/uber/jaeger-client-go/internal/throttler/remote
+github.com/uber/jaeger-client-go/log
+github.com/uber/jaeger-client-go/rpcmetrics
+github.com/uber/jaeger-client-go/thrift
+github.com/uber/jaeger-client-go/thrift-gen/agent
+github.com/uber/jaeger-client-go/thrift-gen/baggage
+github.com/uber/jaeger-client-go/thrift-gen/jaeger
+github.com/uber/jaeger-client-go/thrift-gen/sampling
+github.com/uber/jaeger-client-go/thrift-gen/zipkincore
+github.com/uber/jaeger-client-go/transport
+github.com/uber/jaeger-client-go/utils
+# github.com/uber/jaeger-lib v2.4.1+incompatible
+## explicit
+github.com/uber/jaeger-lib/metrics
 # github.com/urfave/cli/v2 v2.3.0
 github.com/urfave/cli/v2
 # github.com/xanzy/ssh-agent v0.3.0
 github.com/xanzy/ssh-agent
+# go.uber.org/atomic v1.7.0
+## explicit
+go.uber.org/atomic
+# go.uber.org/ratelimit v0.0.0-20180316092928-c15da0234277
+## explicit
+go.uber.org/ratelimit
+go.uber.org/ratelimit/internal/clock
 # golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
 golang.org/x/crypto/acme
 golang.org/x/crypto/acme/autocert

@@ -3,7 +3,7 @@
 @Author : jzd
 @Project: bee-micro
 */
-package metrics
+package filter
 
 import (
 	"fmt"
@@ -13,9 +13,7 @@ import (
 	"time"
 )
 
-var m = newPrometheusMonitor("prometheus", "http-demo")
-
-func Filter(c *context.Context) {
+func (m *Monitor) Filter(c *context.Context) {
 	relativePath := c.Request.URL.Path
 	start := time.Now()
 	reqSize := computeApproximateRequestSize(c.Request)
@@ -27,7 +25,7 @@ func Filter(c *context.Context) {
 	m.ResponseSize.With(prometheus.Labels{"handler": relativePath, "method": c.Request.Method, "code": code, "micro_name": m.ServiceName}).Observe(123)
 }
 
-type PrometheusMonitor struct {
+type Monitor struct {
 	ServiceName string //监控服务的名称
 
 	APIRequestsCounter *prometheus.CounterVec
@@ -36,7 +34,7 @@ type PrometheusMonitor struct {
 	ResponseSize       *prometheus.HistogramVec
 }
 
-func newPrometheusMonitor(namespace, serviceName string) *PrometheusMonitor {
+func NewPrometheusMonitor(namespace, serviceName string) *Monitor {
 	APIRequestsCounter := prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Namespace: namespace,
@@ -76,7 +74,7 @@ func newPrometheusMonitor(namespace, serviceName string) *PrometheusMonitor {
 	//注册指标
 	prometheus.MustRegister(APIRequestsCounter, RequestDuration, RequestSize, ResponseSize)
 
-	return &PrometheusMonitor{
+	return &Monitor{
 		ServiceName:        serviceName,
 		APIRequestsCounter: APIRequestsCounter,
 		RequestDuration:    RequestDuration,

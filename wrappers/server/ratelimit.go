@@ -18,7 +18,7 @@ import (
 
 // NewRateLimitHandlerWrapper takes a rate limiter and wait flag and returns a api  Wrapper.
 func NewRateLimitHandlerWrapper(h http.Handler, b *ratelimit.Bucket, wait bool) http.Handler {
-	fn := limit(b, wait, "go.micro.server")
+	fn := RateLimit(b, wait)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := fn(); err != nil {
 			logs.Error("rate-limit err, %v", err.Error())
@@ -33,7 +33,8 @@ func NewRateLimitHandlerWrapper(h http.Handler, b *ratelimit.Bucket, wait bool) 
 	})
 }
 
-func limit(b *ratelimit.Bucket, wait bool, errId string) func() error {
+func RateLimit(b *ratelimit.Bucket, wait bool) func() error {
+	errId := "go.micro.server"
 	return func() error {
 		if wait {
 			time.Sleep(b.Take(1))

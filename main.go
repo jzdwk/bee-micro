@@ -3,36 +3,43 @@ package main
 import (
 	mybroker "bee-micro/broker"
 	"bee-micro/config"
+	"bee-micro/filter"
 	_ "bee-micro/routers"
-	srvWrapper "bee-micro/wrappers/server"
+	"bee-micro/tracer"
 	"flag"
 	"fmt"
 	"github.com/asim/go-micro/plugins/registry/consul/v3"
 	httpServer "github.com/asim/go-micro/plugins/server/http/v3"
+	tracePlugin "github.com/asim/go-micro/plugins/wrapper/trace/opentracing/v3"
 	"github.com/asim/go-micro/v3"
 	"github.com/asim/go-micro/v3/registry"
 	"github.com/asim/go-micro/v3/server"
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
-	"github.com/google/uuid"
-	"github.com/juju/ratelimit"
+	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"log"
 	"net/http"
 	"time"
 )
 
-var port = flag.String("port", "8010", "port")
-var register = "myecs.jzd:65085"
+var (
+	port     = flag.String("port", "8010", "port")
+	register = "myecs.jzd:65085"
+	jaeger   = "myecs.jzd:65031"
+)
 
 func main() {
 	//load config from consul
-	cfg, _ := config.GetConfig()
-	conf, err := config.GetConsul(cfg, "consul")
-	if err != nil {
+	if err := config.Init(); err != nil {
+		logs.Error("init consul config center err, %v", err.Error())
 		return
 	}
-	logs.Info("read from config center, value %+v", conf)
+	conf, err := config.GetConsul()
+	if err != nil {
+		logs.Error("get consul from config center err, %v", err.Error())
+		return
+	}
+	logs.Info("read from config center, config center address %v", conf.Address)
 	//conf beego
 	beego.BConfig.CopyRequestBody = true
 	//consul
@@ -41,8 +48,8 @@ func main() {
 	})
 	//http server
 	serverName := fmt.Sprintf("http-demo")
-	serverID := uuid.Must(uuid.NewUUID()).String()
-	serverVersion := "v1.0"
+	//serverID := uuid.Must(uuid.NewUUID()).String()
+	//serverVersion := "v1.0"
 	srv := httpServer.NewServer(
 		server.Name(serverName),
 		server.Address(fmt.Sprintf("localhost:%v", port)),
@@ -53,19 +60,35 @@ func main() {
 				promwrapper.ServiceVersion(serverVersion),
 				promwrapper.ServiceID(serverID)))*/)
 
-	//rate limit
-	apiWithRateLimit := srvWrapper.NewRateLimitHandlerWrapper(beego.BeeApp.Handlers, ratelimit.NewBucketWithRate(float64(1), int64(1)), false)
-	opt := srvWrapper.Options{Name: serverName, ID: serverID, Version: serverVersion}
-	apiWithMetric := srvWrapper.NewPrometheusHandlerWrapper(apiWithRateLimit, opt)
-	//metric
-	if err := srv.Handle(srv.NewHandler(apiWithMetric)); err != nil {
-		logs.Error(err.Error())
+	//jaeger
+	jaegerTracer, closer, err := tracer.NewTracer(serverName, jaeger)
+	if err != nil {
+		logs.Error("new jaeger tracer err, %v", err.Error())
 		return
 	}
-	//filter doesn't work?
-	//beego.InsertFilter("/demo/*",beego.AfterExec, mymetrics.Filter)
+	defer closer.Close()
+	opentracing.SetGlobalTracer(jaegerTracer)
+
+	rl, err := filter.NewRateLimit()
+	if err != nil {
+		logs.Error("new rate limit filter err, %v", err.Error())
+		return
+	}
+	pr := filter.NewPrometheusMonitor("prometheus", serverName)
+	beego.InsertFilter("/demo/*", beego.BeforeRouter, rl.Filter, false)
+	beego.InsertFilter("/demo/*", beego.FinishRouter, pr.Filter, false)
+	//rate limit
+	/*	apiWithRateLimit := srvWrapper.NewRateLimitHandlerWrapper(beego.BeeApp.Handlers, ratelimit.NewBucketWithRate(float64(1), int64(1)), false)
+		opt := srvWrapper.Options{Name: serverName, ID: serverID, Version: serverVersion}
+		apiWithMetric := srvWrapper.NewPrometheusHandlerWrapper(apiWithRateLimit, opt)*/
+	//metric
+	if err := srv.Handle(srv.NewHandler(beego.BeeApp.Handlers)); err != nil {
+		logs.Error("new http server handler err, %v", err.Error())
+		return
+	}
 	//redis broker
 	if err := mybroker.Init(); err != nil {
+		logs.Error("init broker err, %v", err.Error())
 		return
 	}
 	//init micro service
@@ -81,23 +104,29 @@ func main() {
 		//msg broker, default http broker
 		micro.Broker(mybroker.RedisBk),
 		//tracing
+		micro.WrapHandler(tracePlugin.NewHandlerWrapper(opentracing.GlobalTracer())),
 		//logging
 	)
 	go PrometheusBoot()
 	service.Init()
 	if err := service.Run(); err != nil {
-		logs.Error("init service err. err %v", err.Error())
+		logs.Error("init service err, %v", err.Error())
 		return
 	}
 }
 
 func PrometheusBoot() {
 	http.Handle("/metrics", promhttp.Handler())
-	// 启动web服务，监听8085端口
+	conf, err := config.GetMetric()
+	if err != nil {
+		logs.Error("get metric config from config center err, %v", err.Error())
+		return
+	}
+	//启动web服务，监听8085端口
 	go func() {
-		err := http.ListenAndServe("localhost:8085", nil)
+		err := http.ListenAndServe(conf.Address, nil)
 		if err != nil {
-			log.Fatal("ListenAndServe: ", err)
+			logs.Error("listen and server on %s err, %v", conf.Address, err.Error())
 		}
 	}()
 }

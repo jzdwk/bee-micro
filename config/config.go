@@ -12,7 +12,17 @@ const (
 	Prefix = "/micro/config"
 )
 
-func GetConfig() (config.Config, error) {
+var AppConfig config.Config
+
+func Init() error {
+	if conf, err := getConfig(); err != nil {
+		return err
+	} else {
+		AppConfig = conf
+	}
+	return nil
+}
+func getConfig() (config.Config, error) {
 	//添加配置中心
 	// etcd key/value 模式
 	// etcdsource := etcd.NewSource(
@@ -42,44 +52,47 @@ func GetConfig() (config.Config, error) {
 	return conf, err
 }
 
-type Config struct {
-	Server Server `json:"server"`
-	Consul Consul `json:"consul"`
-}
-
-type Server struct {
-	Name string `json:"name"`
-	Port string `json:"port"`
+type metric struct {
+	Address string `json:"address"`
 }
 
 type Consul struct {
 	Address string `json:"address"`
 }
 
-type MysqlConfig struct {
-	Host     string `json:"host"`
-	Port     int    `json:"port"`
-	UserName string `json:"username"`
-	Password string `json:"password"`
-	Database string `json:"database"`
+type rateLimit struct {
+	Rate     float64 `json:"rate" default:"100"`
+	Capacity int64   `json:"capacity" default:"100"`
+	Wait     bool    `json:"wait" default:"false"`
 }
 
-// GetMysqlFromConsul 获取mysql的配置
-func GetMysqlFromConsul(config config.Config, path ...string) (*MysqlConfig, error) {
-	mysqlConfig := &MysqlConfig{}
+// 获取Consul
+func GetConsul() (*Consul, error) {
+	conf := &Consul{}
 	//获取配置
-	err := config.Get(path...).Scan(mysqlConfig)
+	err := AppConfig.Get("consul").Scan(conf)
 	if err != nil {
 		return nil, err
 	}
-	return mysqlConfig, nil
+	return conf, nil
 }
 
-// 获取ServerInfo
-func GetConsul(config config.Config, path ...string) (*Consul, error) {
-	conf := &Consul{}
+// 获取RateLimit
+func GetRateLimit() (*rateLimit, error) {
+	conf := &rateLimit{}
 	//获取配置
-	err := config.Get(path...).Scan(conf)
+	err := AppConfig.Get("ratelimit").Scan(conf)
+	if err != nil {
+		return nil, err
+	}
+	return conf, nil
+}
+
+// 获取RateLimit
+func GetMetric() (*metric, error) {
+	conf := &metric{}
+	//获取配置
+	err := AppConfig.Get("metric").Scan(conf)
 	if err != nil {
 		return nil, err
 	}
