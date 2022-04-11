@@ -6,6 +6,7 @@ import (
 	"bee-micro/filter"
 	_ "bee-micro/routers"
 	"bee-micro/tracer"
+	serverWrapper "bee-micro/wrappers/server"
 	"flag"
 	"fmt"
 	"github.com/asim/go-micro/plugins/registry/consul/v3"
@@ -16,7 +17,6 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/google/uuid"
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
@@ -57,21 +57,15 @@ func main() {
 		server.Address(fmt.Sprintf("localhost:%v", port)),
 		server.Broker(mybroker.RedisBk))
 
-	//jaeger
-	jaegerTracer, closer, err := tracer.NewTracer(serverName, jaeger)
-	if err != nil {
-		logs.Error("new jaeger tracer err, %v", err.Error())
-		return
-	}
-	defer closer.Close()
-	opentracing.SetGlobalTracer(jaegerTracer)
+	//rate limit
 	rl, err := filter.NewRateLimit()
 	if err != nil {
 		logs.Error("new rate limit filter err, %v", err.Error())
 		return
 	}
 	beego.InsertFilter("/demo/*", beego.BeforeRouter, rl.Filter, false)
-	// two prometheus impl
+
+	// prometheus impl
 	//pr := filter.NewPrometheusMonitor("prometheus", serverName)
 	//beego.InsertFilter("/demo/*", beego.FinishRouter, pr.Filter, false)
 	op := filter.Options{Name: serverName, ID: serverID, Version: serverVersion}
@@ -82,15 +76,17 @@ func main() {
 		opt := srvWrapper.Options{Name: serverName, ID: serverID, Version: serverVersion}
 		apiWithMetric := srvWrapper.NewPrometheusHandlerWrapper(apiWithRateLimit, opt)*/
 
-	//wrapper trace
+	//jaeger tracer init
 	tr, io, err := tracer.NewTracer("http-demo-tracing", jaeger)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer io.Close()
 	opentracing.SetGlobalTracer(tr)
-	traceHandler := nethttp.Middleware(tr, beego.BeeApp.Handlers)
-	if err := srv.Handle(srv.NewHandler(traceHandler)); err != nil {
+	//traceHandler := nethttp.Middleware(tr, beego.BeeApp.Handlers)
+	tracerConfig := serverWrapper.NewTracerWrapper()
+	apiWrapper := tracerConfig.Wrapper(beego.BeeApp.Handlers)
+	if err := srv.Handle(srv.NewHandler(apiWrapper)); err != nil {
 		logs.Error("new http server handler err, %v", err.Error())
 		return
 	}

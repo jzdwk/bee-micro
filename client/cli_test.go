@@ -5,7 +5,6 @@ import (
 	"bee-micro/tracer"
 	"context"
 	"github.com/asim/go-micro/plugins/registry/consul/v3"
-	micro_opentracing "github.com/asim/go-micro/plugins/wrapper/trace/opentracing/v3"
 	"github.com/asim/go-micro/v3/client"
 	"github.com/asim/go-micro/v3/registry"
 	"github.com/asim/go-micro/v3/selector"
@@ -48,19 +47,19 @@ func TestHttpCli(t *testing.T) {
 		//4. rate limit
 		//client.Wrap(ratelimiter.NewClientWrapper(ratelimit.NewBucket(time.Second,int64(1)),false)),
 		//5.tracing
-		client.Wrap(micro_opentracing.NewClientWrapper(opentracing.GlobalTracer())),
+		//client.Wrap(micro_opentracing.NewClientWrapper(opentracing.GlobalTracer())),
 		//6.tracing with client span
 		//client.Wrap(myTracer.NewClientWrapper(opentracing.GlobalTracer())),
 	)
 
-	for i := 0; i < 2; i++ {
+	for i := 0; i < 1; i++ {
 		doGetRequest(t, c)
 	}
 	//doPostRequest(t, c)
 }
 
 func doGetRequest(t *testing.T, c client.Client) {
-	request := c.NewRequest("http-demo", "GET:/demo/hello/for-test/get", nil, client.WithContentType("application/json"))
+	request := c.NewRequest("http-demo", "GET:/demo/hello2/for-test/get", nil, client.WithContentType("application/json"))
 	var response Resp
 	if err := c.Call(context.Background(), request, &response); err != nil {
 		t.Error(err.Error())
