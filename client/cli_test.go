@@ -1,8 +1,8 @@
 package client
 
 import (
-	httpClient "bee-micro/client/httpclient"
-	"bee-micro/config"
+	httpClient "bee-micro/client/http"
+	"bee-micro/tracer"
 	"context"
 	"github.com/asim/go-micro/plugins/registry/consul/v3"
 	micro_opentracing "github.com/asim/go-micro/plugins/wrapper/trace/opentracing/v3"
@@ -10,33 +10,27 @@ import (
 	"github.com/asim/go-micro/v3/registry"
 	"github.com/asim/go-micro/v3/selector"
 	"github.com/opentracing/opentracing-go"
-	"github.com/uber/jaeger-client-go"
-	jaeger_config "github.com/uber/jaeger-client-go/config"
-	"io"
 	"log"
-
-	//opentracing "github.com/opentracing/opentracing-go"
 	"testing"
 	"time"
 )
 
+var (
+	register = "myecs.jzd:65085"
+	jaeger   = "myecs.jzd:65031"
+)
+
 func TestHttpCli(t *testing.T) {
 	//tracing
-	tracer, io, err := NewTracer("http-demo-tracing-cli", "192.168.143.146:6831")
+	tr, io, err := tracer.NewTracer("http-demo-tracing", jaeger)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer io.Close()
-	opentracing.SetGlobalTracer(tracer)
-
-	//读取配置中心
-	cfg, _ := config.GetConfig()
-
-	info, _ := config.GetConfigInfo(cfg, "config")
-
+	opentracing.SetGlobalTracer(tr)
 	//get service reg
 	reg := consul.NewRegistry(func(options *registry.Options) {
-		options.Addrs = []string{info.Consul.Address}
+		options.Addrs = []string{register}
 	})
 
 	//get service selector
@@ -51,11 +45,17 @@ func TestHttpCli(t *testing.T) {
 		client.RequestTimeout(time.Second*10),
 		//3. hystrix
 		//client.Wrap(wrappers.NewHystrixWrapper()),
-		//tracing
+		//4. rate limit
+		//client.Wrap(ratelimiter.NewClientWrapper(ratelimit.NewBucket(time.Second,int64(1)),false)),
+		//5.tracing
 		client.Wrap(micro_opentracing.NewClientWrapper(opentracing.GlobalTracer())),
+		//6.tracing with client span
+		//client.Wrap(myTracer.NewClientWrapper(opentracing.GlobalTracer())),
 	)
 
-	doGetRequest(t, c)
+	for i := 0; i < 2; i++ {
+		doGetRequest(t, c)
+	}
 	//doPostRequest(t, c)
 }
 
@@ -88,21 +88,4 @@ func doPostRequest(t *testing.T, c client.Client) {
 type Resp struct {
 	Method  string
 	Message string
-}
-
-//创建链路追踪实例
-func NewTracer(serviceName string, addr string) (opentracing.Tracer, io.Closer, error) {
-	cfg := &jaeger_config.Configuration{
-		ServiceName: serviceName,
-		Sampler: &jaeger_config.SamplerConfig{
-			Type:  jaeger.SamplerTypeConst,
-			Param: 1,
-		},
-		Reporter: &jaeger_config.ReporterConfig{
-			BufferFlushInterval: 1 * time.Second,
-			LogSpans:            true,
-			LocalAgentHostPort:  addr,
-		},
-	}
-	return cfg.NewTracer()
 }

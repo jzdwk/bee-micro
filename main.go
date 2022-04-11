@@ -10,15 +10,16 @@ import (
 	"fmt"
 	"github.com/asim/go-micro/plugins/registry/consul/v3"
 	httpServer "github.com/asim/go-micro/plugins/server/http/v3"
-	tracePlugin "github.com/asim/go-micro/plugins/wrapper/trace/opentracing/v3"
 	"github.com/asim/go-micro/v3"
 	"github.com/asim/go-micro/v3/registry"
 	"github.com/asim/go-micro/v3/server"
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/google/uuid"
+	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"log"
 	"net/http"
 	"time"
 )
@@ -80,7 +81,16 @@ func main() {
 	/*	apiWithRateLimit := srvWrapper.NewRateLimitHandlerWrapper(beego.BeeApp.Handlers, ratelimit.NewBucketWithRate(float64(1), int64(1)), false)
 		opt := srvWrapper.Options{Name: serverName, ID: serverID, Version: serverVersion}
 		apiWithMetric := srvWrapper.NewPrometheusHandlerWrapper(apiWithRateLimit, opt)*/
-	if err := srv.Handle(srv.NewHandler(beego.BeeApp.Handlers)); err != nil {
+
+	//wrapper trace
+	tr, io, err := tracer.NewTracer("http-demo-tracing", jaeger)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer io.Close()
+	opentracing.SetGlobalTracer(tr)
+	traceHandler := nethttp.Middleware(tr, beego.BeeApp.Handlers)
+	if err := srv.Handle(srv.NewHandler(traceHandler)); err != nil {
 		logs.Error("new http server handler err, %v", err.Error())
 		return
 	}
@@ -96,13 +106,13 @@ func main() {
 		micro.RegisterInterval(time.Second*10),
 		//backend server
 		micro.Server(srv),
-		micro.Address(":8100"),
+		micro.Address(":8101"),
 		//service registry
 		micro.Registry(reg),
 		//msg broker, default http broker
 		micro.Broker(mybroker.RedisBk),
 		//tracing
-		micro.WrapHandler(tracePlugin.NewHandlerWrapper(opentracing.GlobalTracer())),
+		//micro.WrapHandler(tracePlugin.NewHandlerWrapper(opentracing.GlobalTracer())),
 		//logging
 	)
 	go PrometheusBoot()

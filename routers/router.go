@@ -15,4 +15,8 @@ func init() {
 		),
 	)
 	beego.AddNamespace(ns)
+	//
+	/*	service := rpc.NewHTTPService()
+		service.AddInstanceMethods(&controllers.MainController{})
+		beego.Handler("/main", nethttp.Middleware(trace, service))*/
 }
