@@ -2,10 +2,13 @@
 package http
 
 import (
+	"bee-micro/util"
 	"bufio"
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -17,7 +20,6 @@ import (
 
 	"github.com/asim/go-micro/v3/broker"
 	"github.com/asim/go-micro/v3/client"
-	"github.com/asim/go-micro/v3/cmd"
 	"github.com/asim/go-micro/v3/codec"
 	raw "github.com/asim/go-micro/v3/codec/bytes"
 	errors "github.com/asim/go-micro/v3/errors"
@@ -27,15 +29,24 @@ import (
 	"github.com/asim/go-micro/v3/transport"
 )
 
-type httpClient struct {
-	once sync.Once
-	opts client.Options
+type httpTracer struct {
+	ctx context.Context
 }
 
-func init() {
+func NewHttpTracer(ctx context.Context) *httpTracer {
+	return &httpTracer{ctx: ctx}
+}
+
+type httpClient struct {
+	once   sync.Once
+	opts   client.Options
+	tracer *httpTracer
+}
+
+/*func init() {
 	cmd.DefaultClients["http"] = NewClient
 }
-
+*/
 func (h *httpClient) next(request client.Request, opts client.CallOptions) (selector.Next, error) {
 	service := request.Service()
 	// get proxy
@@ -128,9 +139,42 @@ func (h *httpClient) call(ctx context.Context, node *registry.Node, req client.R
 		Host:          address,
 	}
 
+	//open http tracer
+	var clientSpan opentracing.Span
+	if h.tracer != nil {
+		tracer := opentracing.GlobalTracer()
+		name := fmt.Sprintf("Http Client Span: %s %s%s", req.Method(), req.Service(), req.Endpoint())
+		// Find parent span.
+		// First try to get span within current service boundary.
+		// If there doesn't exist, try to get it from go-micro metadata(which is cross boundary)
+		md, ok := metadata.FromContext(h.tracer.ctx)
+		if !ok {
+			md = make(metadata.Metadata)
+		}
+		var opts []opentracing.StartSpanOption
+		if parentSpan := opentracing.SpanFromContext(h.tracer.ctx); parentSpan != nil {
+			opts = append(opts, opentracing.ChildOf(parentSpan.Context()))
+		} else if spanCtx, err := tracer.Extract(opentracing.TextMap, opentracing.TextMapCarrier(md)); err == nil {
+			opts = append(opts, opentracing.ChildOf(spanCtx))
+		}
+		clientSpan = tracer.StartSpan(name, opts...)
+		defer clientSpan.Finish()
+		// Set some tags on the clientSpan to annotate that it's the client span. The additional HTTP tags are useful for debugging purposes.
+		ext.SpanKindRPCClient.Set(clientSpan)
+		ext.HTTPUrl.Set(clientSpan, rawurl)
+		ext.HTTPMethod.Set(clientSpan, req.Method())
+		// Inject the client span context into the headers
+		tracer.Inject(clientSpan.Context(), opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(hreq.Header))
+	}
 	// make the request
 	hrsp, err := http.DefaultClient.Do(hreq.WithContext(ctx))
 	if err != nil {
+		//add tracer log if necessary
+		if h.tracer != nil {
+			ext.Error.Set(clientSpan, true)
+			//log to span
+			util.TracerLogError(clientSpan, "trace finish, client trace error")
+		}
 		return errors.InternalServerError("go.micro.client", err.Error())
 	}
 	defer hrsp.Body.Close()
@@ -477,7 +521,7 @@ func (h *httpClient) String() string {
 	return "http"
 }
 
-func newClient(opts ...client.Option) client.Client {
+func newClient(tracer *httpTracer, opts ...client.Option) client.Client {
 	options := client.Options{
 		CallOptions: client.CallOptions{
 			Backoff:        client.DefaultBackoff,
@@ -511,8 +555,9 @@ func newClient(opts ...client.Option) client.Client {
 	}
 
 	rc := &httpClient{
-		once: sync.Once{},
-		opts: options,
+		once:   sync.Once{},
+		opts:   options,
+		tracer: tracer,
 	}
 
 	c := client.Client(rc)
@@ -525,6 +570,6 @@ func newClient(opts ...client.Option) client.Client {
 	return c
 }
 
-func NewClient(opts ...client.Option) client.Client {
-	return newClient(opts...)
+func NewClient(httpTracer *httpTracer, opts ...client.Option) client.Client {
+	return newClient(httpTracer, opts...)
 }

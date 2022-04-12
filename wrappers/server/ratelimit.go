@@ -16,9 +16,18 @@ import (
 	"time"
 )
 
+type rateLimitWrapper struct {
+	b    *ratelimit.Bucket
+	wait bool
+}
+
+func NewRateLimitWrapper(b *ratelimit.Bucket, wait bool) *rateLimitWrapper {
+	return &rateLimitWrapper{b: b, wait: wait}
+}
+
 // NewRateLimitHandlerWrapper takes a rate limiter and wait flag and returns a api  Wrapper.
-func NewRateLimitHandlerWrapper(h http.Handler, b *ratelimit.Bucket, wait bool) http.Handler {
-	fn := RateLimit(b, wait)
+func (r *rateLimitWrapper) Wrapper(h http.Handler) http.Handler {
+	fn := rateLimit(r.b, r.wait)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := fn(); err != nil {
 			logs.Error("rate-limit err, %v", err.Error())
@@ -27,13 +36,14 @@ func NewRateLimitHandlerWrapper(h http.Handler, b *ratelimit.Bucket, wait bool) 
 			rsp.Message = "too many requests"
 			retJson, _ := json.Marshal(rsp)
 			io.WriteString(w, string(retJson))
+			w.WriteHeader(http.StatusTooManyRequests)
 			return
 		}
 		h.ServeHTTP(w, r)
 	})
 }
 
-func RateLimit(b *ratelimit.Bucket, wait bool) func() error {
+func rateLimit(b *ratelimit.Bucket, wait bool) func() error {
 	errId := "go.micro.server"
 	return func() error {
 		if wait {

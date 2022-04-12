@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"github.com/asim/go-micro/v3/logger"
+	httpSnoop "github.com/felixge/httpsnoop"
 	"github.com/prometheus/client_golang/prometheus"
 	"net/http"
 )
@@ -17,13 +18,11 @@ var (
 	timeCounterHistogram *prometheus.HistogramVec
 )
 
-type Options struct {
+type metricWrapper struct {
 	Name    string
 	Version string
 	ID      string
 }
-
-type Option func(*Options)
 
 func init() {
 	if opsCounter == nil {
@@ -83,25 +82,23 @@ func init() {
 
 }
 
-type wrapper struct {
-	options Options
+func NewMetricWrapper(Name, Version, ID string) *metricWrapper {
+	return &metricWrapper{Name: Name, Version: Version, ID: ID}
 }
 
-func NewPrometheusHandlerWrapper(h http.Handler, options Options) http.Handler {
-	w := &wrapper{
-		options: options,
-	}
-	return http.HandlerFunc(func(rsp http.ResponseWriter, req *http.Request) {
-		endpoint := req.RemoteAddr
+func (o *metricWrapper) Wrapper(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		endpoint := r.RemoteAddr
 		timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
 			us := v * 1000000 // make microseconds
-			timeCounterSummary.WithLabelValues(w.options.Name, w.options.Version, w.options.ID, endpoint).Observe(us)
-			timeCounterHistogram.WithLabelValues(w.options.Name, w.options.Version, w.options.ID, endpoint).Observe(v)
+			timeCounterSummary.WithLabelValues(o.Name, o.Version, o.ID, endpoint).Observe(us)
+			timeCounterHistogram.WithLabelValues(o.Name, o.Version, o.ID, endpoint).Observe(v)
 		}))
 		defer timer.ObserveDuration()
-		h.ServeHTTP(rsp, req)
-		//can not get rsp message
-		opsCounter.WithLabelValues(w.options.Name, w.options.Version, w.options.ID, endpoint, "success").Inc()
-		//opsCounter.WithLabelValues(w.options.Name, w.options.Version, w.options.ID, endpoint, "failure").Inc()
+		m := httpSnoop.CaptureMetrics(h, w, r)
+		if m.Code > http.StatusBadRequest {
+			opsCounter.WithLabelValues(o.Name, o.Version, o.ID, endpoint, "failure").Inc()
+		}
+		opsCounter.WithLabelValues(o.Name, o.Version, o.ID, endpoint, "success").Inc()
 	})
 }

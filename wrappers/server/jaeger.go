@@ -6,8 +6,9 @@
 package server
 
 import (
-	httpWp "bee-micro/util"
+	"bee-micro/util"
 	"context"
+	"fmt"
 	opentracingMicro "github.com/asim/go-micro/plugins/wrapper/trace/opentracing/v3"
 	"github.com/astaxie/beego/logs"
 	httpSnoop "github.com/felixge/httpsnoop"
@@ -20,7 +21,7 @@ import (
 var sf = 100
 
 type tracerWrapper struct {
-	spanCtx *opentracing.SpanContext
+	spanCtx opentracing.SpanContext
 	ctx     context.Context
 }
 
@@ -29,15 +30,16 @@ func NewTracerWrapper() *tracerWrapper {
 }
 
 // TracerWrapper tracer wrapper
-func (tr *tracerWrapper) HttpTracerWrapper(h http.Handler) http.Handler {
+func (tr *tracerWrapper) Wrapper(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var sp opentracing.Span
 		md := make(map[string]string)
+		spanName := fmt.Sprintf("Http Server Span: %s %s%s", r.Method, r.Host, r.URL.Path)
 		spanCtx, err := opentracing.GlobalTracer().Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
 		if err != nil {
-			sp = opentracing.GlobalTracer().StartSpan(r.URL.Path)
+			sp = opentracing.GlobalTracer().StartSpan(spanName)
 		} else {
-			sp = opentracing.GlobalTracer().StartSpan(r.URL.Path, opentracing.ChildOf(spanCtx))
+			sp = opentracing.GlobalTracer().StartSpan(spanName, opentracing.ChildOf(spanCtx))
 		}
 		defer sp.Finish()
 		if err := opentracing.GlobalTracer().Inject(sp.Context(),
@@ -45,15 +47,16 @@ func (tr *tracerWrapper) HttpTracerWrapper(h http.Handler) http.Handler {
 			opentracing.TextMapCarrier(md)); err != nil {
 			logs.Error("inject span err, %s", err.Error())
 		}
-		*tr.spanCtx = sp.Context()
-		wp := &httpWp.StatusCodeTracker{ResponseWriter: w, Status: http.StatusOK}
-		h.ServeHTTP(wp.WrappedResponseWriter(), r)
-
+		tr.spanCtx = sp.Context()
+		m := httpSnoop.CaptureMetrics(h, w, r)
 		ext.HTTPMethod.Set(sp, r.Method)
 		ext.HTTPUrl.Set(sp, r.URL.EscapedPath())
-		ext.HTTPStatusCode.Set(sp, uint16(wp.Status))
-		if wp.Status >= http.StatusInternalServerError {
+		ext.HTTPStatusCode.Set(sp, uint16(m.Code))
+		if m.Code >= http.StatusBadRequest {
 			ext.Error.Set(sp, true)
+			//log to span
+			util.TracerLogError(sp, "trace finish, server response error")
+			return
 		} else if rand.Intn(100) > sf {
 			ext.SamplingPriority.Set(sp, 0)
 		}
@@ -61,7 +64,7 @@ func (tr *tracerWrapper) HttpTracerWrapper(h http.Handler) http.Handler {
 }
 
 // TracerWrapper tracer wrapper
-func (tr *tracerWrapper) Wrapper(h http.Handler) http.Handler {
+func (tr *tracerWrapper) Wrapper2(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx, span, err := opentracingMicro.StartSpanFromContext(context.TODO(), opentracing.GlobalTracer(), r.URL.Path)
 		if err != nil {

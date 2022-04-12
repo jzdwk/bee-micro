@@ -3,7 +3,6 @@ package main
 import (
 	mybroker "bee-micro/broker"
 	"bee-micro/config"
-	"bee-micro/filter"
 	_ "bee-micro/routers"
 	"bee-micro/tracer"
 	serverWrapper "bee-micro/wrappers/server"
@@ -17,6 +16,7 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/google/uuid"
+	"github.com/juju/ratelimit"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
@@ -44,6 +44,7 @@ func main() {
 	logs.Info("read from config center, config center address %v", conf.Address)
 	//conf beego
 	beego.BConfig.CopyRequestBody = true
+
 	//consul
 	reg := consul.NewRegistry(func(options *registry.Options) {
 		options.Addrs = []string{register}
@@ -58,35 +59,47 @@ func main() {
 		server.Broker(mybroker.RedisBk))
 
 	//rate limit
-	rl, err := filter.NewRateLimit()
+	/*rl, err := filter.NewRateLimit()
 	if err != nil {
 		logs.Error("new rate limit filter err, %v", err.Error())
 		return
 	}
-	beego.InsertFilter("/demo/*", beego.BeforeRouter, rl.Filter, false)
+	beego.InsertFilter("/demo/*", beego.BeforeRouter, rl.Filter, false)*/
 
 	// prometheus impl
 	//pr := filter.NewPrometheusMonitor("prometheus", serverName)
 	//beego.InsertFilter("/demo/*", beego.FinishRouter, pr.Filter, false)
-	op := filter.Options{Name: serverName, ID: serverID, Version: serverVersion}
-	beego.InsertFilter("/demo/*", beego.FinishRouter, op.Filter, false)
+	/*op := filter.Options{Name: serverName, ID: serverID, Version: serverVersion}
+	beego.InsertFilter("/demo/*", beego.FinishRouter, op.Filter, false)*/
 
-	//wrapper impl
-	/*	apiWithRateLimit := srvWrapper.NewRateLimitHandlerWrapper(beego.BeeApp.Handlers, ratelimit.NewBucketWithRate(float64(1), int64(1)), false)
-		opt := srvWrapper.Options{Name: serverName, ID: serverID, Version: serverVersion}
-		apiWithMetric := srvWrapper.NewPrometheusHandlerWrapper(apiWithRateLimit, opt)*/
+	//wrapper init
+	wrappers := make([]serverWrapper.Wrapper, 0, 20)
+	var apiHandler http.Handler
+	apiHandler = beego.BeeApp.Handlers
+	//1. rate limit
+	rl, err := config.GetRateLimit()
+	if err != nil {
+		logs.Error("get rate limit config from config center err, %s", err.Error())
+		return
+	}
+	logs.Info("get rate limit from config center, value %+v", conf)
+	bucket := ratelimit.NewBucketWithRate(rl.Rate, rl.Capacity)
+	wrappers = append(wrappers, serverWrapper.NewRateLimitWrapper(bucket, rl.Wait))
 
-	//jaeger tracer init
+	//2. tracer
 	tr, io, err := tracer.NewTracer("http-demo-tracing", jaeger)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer io.Close()
 	opentracing.SetGlobalTracer(tr)
-	//traceHandler := nethttp.Middleware(tr, beego.BeeApp.Handlers)
-	tracerConfig := serverWrapper.NewTracerWrapper()
-	apiWrapper := tracerConfig.Wrapper(beego.BeeApp.Handlers)
-	if err := srv.Handle(srv.NewHandler(apiWrapper)); err != nil {
+	wrappers = append(wrappers, serverWrapper.NewTracerWrapper())
+	//3. metric
+	wrappers = append(wrappers, serverWrapper.NewMetricWrapper(serverName, serverVersion, serverID))
+	for i := len(wrappers); i > 0; i-- {
+		apiHandler = (wrappers[i-1]).Wrapper(apiHandler)
+	}
+	if err := srv.Handle(srv.NewHandler(apiHandler)); err != nil {
 		logs.Error("new http server handler err, %v", err.Error())
 		return
 	}
@@ -98,8 +111,8 @@ func main() {
 	//init micro service
 	service := micro.NewService(
 		//health check
-		micro.RegisterTTL(time.Second*10),
-		micro.RegisterInterval(time.Second*10),
+		micro.RegisterTTL(time.Second*100),
+		micro.RegisterInterval(time.Second*100),
 		//backend server
 		micro.Server(srv),
 		micro.Address(":8101"),
@@ -107,8 +120,6 @@ func main() {
 		micro.Registry(reg),
 		//msg broker, default http broker
 		micro.Broker(mybroker.RedisBk),
-		//tracing
-		//micro.WrapHandler(tracePlugin.NewHandlerWrapper(opentracing.GlobalTracer())),
 		//logging
 	)
 	go PrometheusBoot()

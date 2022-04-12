@@ -27,40 +27,40 @@ func TestHttpCli(t *testing.T) {
 	}
 	defer io.Close()
 	opentracing.SetGlobalTracer(tr)
+	httpTracer := httpClient.NewHttpTracer(context.TODO())
 	//get service reg
 	reg := consul.NewRegistry(func(options *registry.Options) {
 		options.Addrs = []string{register}
 	})
-
 	//get service selector
 	s := selector.NewSelector(selector.Registry(reg), selector.SetStrategy(selector.RoundRobin))
 
 	//new http client
 	c := httpClient.NewClient(
+		//0.set http client tracer
+		httpTracer,
 		//1. lb selector
 		client.Selector(s),
 		//2. timeout setting
-		client.DialTimeout(time.Second*10),
-		client.RequestTimeout(time.Second*10),
+		client.DialTimeout(time.Second*100),
+		client.RequestTimeout(time.Second*100),
 		//3. hystrix
 		//client.Wrap(wrappers.NewHystrixWrapper()),
 		//4. rate limit
 		//client.Wrap(ratelimiter.NewClientWrapper(ratelimit.NewBucket(time.Second,int64(1)),false)),
 		//5.tracing
 		//client.Wrap(micro_opentracing.NewClientWrapper(opentracing.GlobalTracer())),
-		//6.tracing with client span
-		//client.Wrap(myTracer.NewClientWrapper(opentracing.GlobalTracer())),
 	)
 
-	for i := 0; i < 1; i++ {
+	for i := 0; i < 5; i++ {
 		doGetRequest(t, c)
 	}
 	//doPostRequest(t, c)
 }
 
 func doGetRequest(t *testing.T, c client.Client) {
-	request := c.NewRequest("http-demo", "GET:/demo/hello2/for-test/get", nil, client.WithContentType("application/json"))
-	var response Resp
+	request := c.NewRequest("http-demo", "GET:/demo/hello/for-test/get", nil, client.WithContentType("application/json"))
+	var response interface{}
 	if err := c.Call(context.Background(), request, &response); err != nil {
 		t.Error(err.Error())
 		return
