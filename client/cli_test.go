@@ -52,7 +52,7 @@ func TestHttpCli(t *testing.T) {
 		//client.Wrap(micro_opentracing.NewClientWrapper(opentracing.GlobalTracer())),
 	)
 
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 10; i++ {
 		doGetRequest(t, c)
 	}
 	//doPostRequest(t, c)
