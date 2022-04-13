@@ -51,7 +51,8 @@ func TestHttpCli(t *testing.T) {
 		//5.tracing
 		//client.Wrap(micro_opentracing.NewClientWrapper(opentracing.GlobalTracer())),
 	)
-
+	//client wrap example
+	//c = clientWrapper.NewLogWrap(c)
 	for i := 0; i < 10; i++ {
 		doGetRequest(t, c)
 	}
