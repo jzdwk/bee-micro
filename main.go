@@ -8,7 +8,7 @@ import (
 	serverWrapper "bee-micro/wrappers/server"
 	"flag"
 	"fmt"
-	"github.com/asim/go-micro/plugins/registry/consul/v3"
+	etcdv3 "github.com/asim/go-micro/plugins/registry/etcd/v3"
 	httpServer "github.com/asim/go-micro/plugins/server/http/v3"
 	"github.com/asim/go-micro/v3"
 	"github.com/asim/go-micro/v3/registry"
@@ -26,7 +26,7 @@ import (
 
 var (
 	port     = flag.String("port", "8010", "port")
-	register = "myecs.jzd:65085"
+	register = "myecs.jzd:65379"
 	jaeger   = "myecs.jzd:65031"
 )
 
@@ -46,9 +46,17 @@ func main() {
 	beego.BConfig.CopyRequestBody = true
 
 	//consul
-	reg := consul.NewRegistry(func(options *registry.Options) {
+	//"github.com/asim/go-micro/plugins/registry/consul/v3"
+	/*reg := consul.NewRegistry(func(options *registry.Options) {
 		options.Addrs = []string{register}
+	})*/
+	//etcd
+	reg := etcdv3.NewRegistry(func(op *registry.Options) {
+		op.Addrs = []string{
+			register,
+		}
 	})
+
 	//http server
 	serverName := fmt.Sprintf("http-demo")
 	serverID := uuid.Must(uuid.NewUUID()).String()
@@ -115,7 +123,7 @@ func main() {
 		micro.RegisterInterval(time.Second*100),
 		//backend server
 		micro.Server(srv),
-		micro.Address(":8101"),
+		micro.Address(":8100"),
 		//service registry
 		micro.Registry(reg),
 		//msg broker, default http broker

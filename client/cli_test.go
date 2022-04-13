@@ -4,7 +4,7 @@ import (
 	httpClient "bee-micro/client/http"
 	"bee-micro/tracer"
 	"context"
-	"github.com/asim/go-micro/plugins/registry/consul/v3"
+	"github.com/asim/go-micro/plugins/registry/etcd/v3"
 	"github.com/asim/go-micro/v3/client"
 	"github.com/asim/go-micro/v3/registry"
 	"github.com/asim/go-micro/v3/selector"
@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	register = "myecs.jzd:65085"
+	register = "myecs.jzd:65379"
 	jaeger   = "myecs.jzd:65031"
 )
 
@@ -29,7 +29,7 @@ func TestHttpCli(t *testing.T) {
 	opentracing.SetGlobalTracer(tr)
 	httpTracer := httpClient.NewHttpTracer(context.TODO())
 	//get service reg
-	reg := consul.NewRegistry(func(options *registry.Options) {
+	reg := etcd.NewRegistry(func(options *registry.Options) {
 		options.Addrs = []string{register}
 	})
 	//get service selector
