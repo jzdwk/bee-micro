@@ -9,7 +9,7 @@ require (
 	github.com/asim/go-micro/plugins/config/encoder/yaml/v3 v3.7.0
 	github.com/asim/go-micro/plugins/config/source/consul/v3 v3.7.0 // indirect
 	github.com/asim/go-micro/plugins/config/source/etcd/v3 v3.7.1
-	github.com/asim/go-micro/plugins/registry/consul/v3 v3.7.0 // indirect
+	github.com/asim/go-micro/plugins/registry/consul/v3 v3.7.0
 	github.com/asim/go-micro/plugins/registry/etcd/v3 v3.7.0
 	github.com/asim/go-micro/plugins/server/http/v3 v3.7.0
 	github.com/asim/go-micro/plugins/wrapper/trace/opentracing/v3 v3.7.0 // indirect

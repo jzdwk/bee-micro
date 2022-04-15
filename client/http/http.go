@@ -29,18 +29,10 @@ import (
 	"github.com/asim/go-micro/v3/transport"
 )
 
-type httpTracer struct {
-	ctx context.Context
-}
-
-func NewHttpTracer(ctx context.Context) *httpTracer {
-	return &httpTracer{ctx: ctx}
-}
-
 type httpClient struct {
-	once   sync.Once
-	opts   client.Options
-	tracer *httpTracer
+	once  sync.Once
+	opts  client.Options
+	trace bool
 }
 
 /*func init() {
@@ -91,10 +83,14 @@ func (h *httpClient) call(ctx context.Context, node *registry.Node, req client.R
 	// set the address
 	address := node.Address
 	header := make(http.Header)
+	var ctxMd metadata.Metadata
 	if md, ok := metadata.FromContext(ctx); ok {
 		for k, v := range md {
 			header.Set(k, v)
 		}
+		ctxMd = md
+	} else {
+		ctxMd = make(metadata.Metadata)
 	}
 
 	// set timeout in nanoseconds
@@ -141,21 +137,16 @@ func (h *httpClient) call(ctx context.Context, node *registry.Node, req client.R
 
 	//open http tracer
 	var clientSpan opentracing.Span
-	if h.tracer != nil {
+	if h.trace {
 		tracer := opentracing.GlobalTracer()
 		name := fmt.Sprintf("Http Client Span: %s %s%s", req.Method(), req.Service(), req.Endpoint())
-		// Find parent span.
-		// First try to get span within current service boundary.
-		// If there doesn't exist, try to get it from go-micro metadata(which is cross boundary)
-		md, ok := metadata.FromContext(h.tracer.ctx)
-		if !ok {
-			md = make(metadata.Metadata)
-		}
 		var opts []opentracing.StartSpanOption
-		if parentSpan := opentracing.SpanFromContext(h.tracer.ctx); parentSpan != nil {
-			opts = append(opts, opentracing.ChildOf(parentSpan.Context()))
-		} else if spanCtx, err := tracer.Extract(opentracing.TextMap, opentracing.TextMapCarrier(md)); err == nil {
-			opts = append(opts, opentracing.ChildOf(spanCtx))
+		if spanFromSelfDefine := ctx.Value("parentSpanCtx").(opentracing.SpanContext); spanFromSelfDefine != nil {
+			opts = append(opts, opentracing.ChildOf(spanFromSelfDefine))
+		} else if spanFromCtx := opentracing.SpanFromContext(ctx); spanFromCtx != nil {
+			opts = append(opts, opentracing.ChildOf(spanFromCtx.Context()))
+		} else if spanFromTextMap, err := tracer.Extract(opentracing.TextMap, opentracing.TextMapCarrier(ctxMd)); spanFromTextMap != nil && err == nil {
+			opts = append(opts, opentracing.ChildOf(spanFromTextMap))
 		}
 		clientSpan = tracer.StartSpan(name, opts...)
 		defer clientSpan.Finish()
@@ -170,7 +161,7 @@ func (h *httpClient) call(ctx context.Context, node *registry.Node, req client.R
 	hrsp, err := http.DefaultClient.Do(hreq.WithContext(ctx))
 	if err != nil {
 		//add tracer log if necessary
-		if h.tracer != nil {
+		if h.trace {
 			ext.Error.Set(clientSpan, true)
 			//log to span
 			util.TracerLogError(clientSpan, "trace finish, client trace error")
@@ -521,7 +512,7 @@ func (h *httpClient) String() string {
 	return "http"
 }
 
-func newClient(tracer *httpTracer, opts ...client.Option) client.Client {
+func newClient(trace bool, opts ...client.Option) client.Client {
 	options := client.Options{
 		CallOptions: client.CallOptions{
 			Backoff:        client.DefaultBackoff,
@@ -555,9 +546,9 @@ func newClient(tracer *httpTracer, opts ...client.Option) client.Client {
 	}
 
 	rc := &httpClient{
-		once:   sync.Once{},
-		opts:   options,
-		tracer: tracer,
+		once:  sync.Once{},
+		opts:  options,
+		trace: trace,
 	}
 
 	c := client.Client(rc)
@@ -570,6 +561,6 @@ func newClient(tracer *httpTracer, opts ...client.Option) client.Client {
 	return c
 }
 
-func NewClient(httpTracer *httpTracer, opts ...client.Option) client.Client {
-	return newClient(httpTracer, opts...)
+func NewClient(trace bool, opts ...client.Option) client.Client {
+	return newClient(trace, opts...)
 }

@@ -27,7 +27,6 @@ func TestHttpCli(t *testing.T) {
 	}
 	defer io.Close()
 	opentracing.SetGlobalTracer(tr)
-	httpTracer := httpClient.NewHttpTracer(context.TODO())
 	//get service reg
 	reg := etcd.NewRegistry(func(options *registry.Options) {
 		options.Addrs = []string{register}
@@ -38,7 +37,7 @@ func TestHttpCli(t *testing.T) {
 	//new http client
 	c := httpClient.NewClient(
 		//0.set http client tracer
-		httpTracer,
+		true,
 		//1. lb selector
 		client.Selector(s),
 		//2. timeout setting
