@@ -15,15 +15,10 @@ import (
 func TestCreateService(t *testing.T) {
 	initial.InitDb()
 	apiService := &models.ApiService{
-		Id:           "id1",
-		Name:         "name1",
-		BaseUrl:      "baseUrl1",
-		ResourcePath: "resourcePath1",
-		EndPoint:     "http://test.com",
-		AuthType:     "NONE",
-		Config:       "{config:test}",
-		CreateTime:   time.Now(),
-		UpdateTime:   time.Now(),
+		Id:         "123",
+		Name:       "name1",
+		CreateTime: time.Now(),
+		UpdateTime: time.Now(),
 	}
 	err := CreateService(Ormer(), apiService)
 	if err != nil {

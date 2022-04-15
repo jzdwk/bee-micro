@@ -6,9 +6,10 @@
 package initial
 
 import (
+	"bee-micro/config"
 	"database/sql"
 	"fmt"
-	"github.com/astaxie/beego"
+	"github.com/astaxie/beego/logs"
 	"github.com/astaxie/beego/orm"
 	"github.com/lib/pq"
 	_ "github.com/lib/pq" // pgsql driver
@@ -84,34 +85,19 @@ func (p *postgreSQL) register(alias ...string) error {
 
 // newPGSQL returns an instance of postgres
 func newPGSQL() database {
-	defaultPg := &postgreSQL{
-		host:     "127.0.0.1",
-		port:     "5432",
-		username: "apigw",
-		password: "123456",
-		database: "apigw",
-		timezone: "Asia/shanghai",
+
+	conf, err := config.GetDB()
+	if err != nil {
+		logs.Error("get database from config center err, %v", err.Error())
+		return nil
+	}
+	return &postgreSQL{
+		host:     conf.Host,
+		port:     conf.Port,
+		username: conf.User,
+		password: conf.Password,
+		database: conf.Name,
+		timezone: conf.Timezone,
 		sslmode:  "disable", //default
 	}
-
-	//get config from app.conf
-	if dbName := beego.AppConfig.String("DBName"); dbName != "" {
-		defaultPg.database = dbName
-	}
-	if host := beego.AppConfig.String("PGHost"); host != "" {
-		defaultPg.host = host
-	}
-	if port := beego.AppConfig.String("PGPort"); port != "" {
-		defaultPg.port = port
-	}
-	if usr := beego.AppConfig.String("PGUser"); usr != "" {
-		defaultPg.username = usr
-	}
-	if pwd := beego.AppConfig.String("PGPasswd"); pwd != "" {
-		defaultPg.password = pwd
-	}
-	if timezone := beego.AppConfig.String("PGTimeZone"); timezone != "" {
-		defaultPg.timezone = timezone
-	}
-	return defaultPg
 }

@@ -1,8 +1,10 @@
 package dao
 
 import (
+	"fmt"
 	"github.com/astaxie/beego/logs"
 	"github.com/astaxie/beego/orm"
+	"github.com/opentracing/opentracing-go"
 	uuid "github.com/satori/go.uuid"
 	"sync"
 )
@@ -40,14 +42,20 @@ func Ormer() orm.Ormer {
 }
 
 // WithTransaction helper for transaction
-func WithTransaction(handler func(o orm.Ormer) error) error {
+func WithTransaction(method string, opc opentracing.SpanContext, handler func(o orm.Ormer) error) error {
+
+	sp := opentracing.StartSpan("DB method="+method, opentracing.ChildOf(opc))
+	defer sp.Finish()
+
 	o := orm.NewOrm()
 	if err := o.Begin(); err != nil {
+		sp.SetTag("method err", fmt.Sprintf("begin transaction failed: %v", err))
 		logs.Error("begin transaction failed: %v", err)
 		return err
 	}
 	if err := handler(o); err != nil {
 		if e := o.Rollback(); e != nil {
+			sp.SetTag("method err", fmt.Sprintf("rollback transaction failed: %v", e))
 			logs.Error("rollback transaction failed: %v", e)
 			return e
 		}
@@ -55,8 +63,10 @@ func WithTransaction(handler func(o orm.Ormer) error) error {
 		return err
 	}
 	if err := o.Commit(); err != nil {
+		sp.SetTag("method err", fmt.Sprintf("commit transaction failed: %v", err))
 		logs.Error("commit transaction failed: %v", err)
 		return err
 	}
+	sp.SetTag(method, "success")
 	return nil
 }

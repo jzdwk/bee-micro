@@ -1,8 +1,6 @@
 package initial
 
 import (
-	_ "bee-micro/models"
-	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/astaxie/beego/orm"
 	"time"
@@ -39,10 +37,7 @@ func InitDb() {
 	if err != nil {
 		panic(err)
 	}
-	ttl := beego.AppConfig.DefaultInt("DBConnTTL", 30)
-	sqlDB.SetConnMaxLifetime(time.Duration(ttl) * time.Second)
-	orm.Debug = beego.AppConfig.DefaultBool("ShowSql", false)
-
+	sqlDB.SetConnMaxLifetime(time.Duration(30) * time.Second)
 }
 
 func TruncateDB(dbType string) {

@@ -3,6 +3,7 @@ package main
 import (
 	mybroker "bee-micro/broker"
 	"bee-micro/config"
+	"bee-micro/initial"
 	_ "bee-micro/routers"
 	"bee-micro/tracer"
 	serverWrapper "bee-micro/wrappers/server"
@@ -131,6 +132,9 @@ func main() {
 		//logging
 	)
 	go PrometheusBoot()
+	//db init
+	initial.InitDb()
+	//run micro
 	service.Init()
 	if err := service.Run(); err != nil {
 		logs.Error("init service err, %v", err.Error())

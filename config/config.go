@@ -71,6 +71,15 @@ type rateLimit struct {
 	Wait     bool    `json:"wait" default:"false"`
 }
 
+type database struct {
+	Name     string `json:"name" default:"test"`
+	Host     string `json:"host" default:"localhost"`
+	Port     string `json:"port" default:"5432"`
+	User     string `json:"user" default:"postgres"`
+	Password string `json:"password" default:"postgres"`
+	Timezone string `json:"timezone" default:"Asia/shanghai"`
+}
+
 // 获取Service
 func GetService() (*service, error) {
 	conf := &service{}
@@ -109,6 +118,17 @@ func GetKong() (*kong, error) {
 	conf := &kong{}
 	//获取配置
 	err := AppConfig.Get("kong").Scan(conf)
+	if err != nil {
+		return nil, err
+	}
+	return conf, nil
+}
+
+// 获取db
+func GetDB() (*database, error) {
+	conf := &database{}
+	//获取配置
+	err := AppConfig.Get("database").Scan(conf)
 	if err != nil {
 		return nil, err
 	}
