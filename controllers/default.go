@@ -102,7 +102,7 @@ func DoHttpReq(ctx context.Context) error {
 	//new http client
 	c := httpClient.NewClient(
 		//0.set http client tracer
-		true,
+		false,
 		//1. lb selector
 		client.Selector(s),
 		//2. timeout setting

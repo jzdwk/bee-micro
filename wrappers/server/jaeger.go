@@ -6,7 +6,6 @@
 package server
 
 import (
-	"bee-micro/dao"
 	"bee-micro/util"
 	"context"
 	"fmt"
@@ -19,8 +18,6 @@ import (
 )
 
 var sf = 100
-
-const HttpXRequestID = "X-Request-ID"
 
 type tracerWrapper struct {
 	//spanCtx opentracing.SpanContext
@@ -53,11 +50,11 @@ func (tr *tracerWrapper) Wrapper(h http.Handler) http.Handler {
 		}
 		//get requestId
 		var requestId string
-		if requestId = r.Header.Get(HttpXRequestID); requestId == "" {
-			requestId = dao.UUID()
+		if requestId = r.Header.Get(util.HttpXRequestID); requestId == "" {
+			requestId = util.UUID()
 		}
-		sp.SetTag(HttpXRequestID, requestId)
-		ctxWithRequestId := context.WithValue(ctxWithSpan, HttpXRequestID, requestId)
+		sp.SetTag(util.HttpXRequestID, requestId)
+		ctxWithRequestId := context.WithValue(ctxWithSpan, util.HttpXRequestID, requestId)
 
 		//http ServeHTTP()
 		m := httpSnoop.CaptureMetrics(h, w, r.WithContext(ctxWithRequestId))

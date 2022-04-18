@@ -2,9 +2,7 @@
 package http
 
 import (
-	"bee-micro/dao"
 	"bee-micro/util"
-	"bee-micro/wrappers/server"
 	"bufio"
 	"bytes"
 	"context"
@@ -132,10 +130,10 @@ func (h *httpClient) call(ctx context.Context, node *registry.Node, req client.R
 	var clientSpan opentracing.Span
 	if h.trace {
 		//
-		if requestId := ctx.Value(server.HttpXRequestID).(string); requestId != "" {
-			header.Set(server.HttpXRequestID, requestId)
+		if requestId := ctx.Value(util.HttpXRequestID).(string); requestId != "" {
+			header.Set(util.HttpXRequestID, requestId)
 		} else {
-			header.Set(server.HttpXRequestID, dao.UUID())
+			header.Set(util.HttpXRequestID, util.UUID())
 		}
 
 		tracer := opentracing.GlobalTracer()

@@ -1,13 +1,12 @@
 package dao
 
 import (
-	"bee-micro/wrappers/server"
+	"bee-micro/util"
 	"context"
 	"fmt"
 	"github.com/astaxie/beego/logs"
 	"github.com/astaxie/beego/orm"
 	"github.com/opentracing/opentracing-go"
-	uuid "github.com/satori/go.uuid"
 	"sync"
 )
 
@@ -15,12 +14,6 @@ var (
 	globalOrm orm.Ormer
 	once      sync.Once
 )
-
-var UUID = func() string {
-	return uuid.NewV4().String()
-}
-
-type sql string
 
 // singleton init ormer ,only use for normal db operation
 // if you begin transaction，please use WithTransaction
@@ -34,7 +27,7 @@ func Ormer() orm.Ormer {
 // WithTransaction helper for transaction
 func WithTransaction(ctx context.Context, method string, handler func(o orm.Ormer) error) (context.Context, error) {
 	sp, tranCtx := opentracing.StartSpanFromContext(ctx, method)
-	requestId := tranCtx.Value(server.HttpXRequestID)
+	requestId := tranCtx.Value(util.HttpXRequestID)
 	defer sp.Finish()
 
 	o := orm.NewOrm()
