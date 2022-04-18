@@ -1,6 +1,8 @@
 package dao
 
 import (
+	"bee-micro/wrappers/server"
+	"context"
 	"fmt"
 	"github.com/astaxie/beego/logs"
 	"github.com/astaxie/beego/orm"
@@ -8,18 +10,6 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"sync"
 )
-
-const (
-	SqlErrorCode int64 = -1
-	ZeroCount          = 0
-	ZeroUUID           = "-"
-	// authz_info invalid
-	Period  = 0
-	Invalid = 1
-	Forever = 2
-)
-
-const BeegoEmptyRowErr = "<QuerySeter> no row found"
 
 var (
 	globalOrm orm.Ormer
@@ -42,31 +32,40 @@ func Ormer() orm.Ormer {
 }
 
 // WithTransaction helper for transaction
-func WithTransaction(method string, opc opentracing.SpanContext, handler func(o orm.Ormer) error) error {
-
-	sp := opentracing.StartSpan("DB method="+method, opentracing.ChildOf(opc))
+func WithTransaction(ctx context.Context, method string, handler func(o orm.Ormer) error) (context.Context, error) {
+	sp, tranCtx := opentracing.StartSpanFromContext(ctx, method)
+	requestId := tranCtx.Value(server.HttpXRequestID)
 	defer sp.Finish()
 
 	o := orm.NewOrm()
 	if err := o.Begin(); err != nil {
-		sp.SetTag("method err", fmt.Sprintf("begin transaction failed: %v", err))
+		sp.SetTag("method err", fmt.Sprintf("begin transaction failed: %v, rqeuset id %s", err, requestId))
 		logs.Error("begin transaction failed: %v", err)
-		return err
+		return nil, err
 	}
 	if err := handler(o); err != nil {
 		if e := o.Rollback(); e != nil {
-			sp.SetTag("method err", fmt.Sprintf("rollback transaction failed: %v", e))
+			sp.SetTag("method err", fmt.Sprintf("rollback transaction failed: %v, request id %s", e, requestId))
 			logs.Error("rollback transaction failed: %v", e)
-			return e
+			return nil, err
 		}
 
-		return err
+		return nil, err
 	}
 	if err := o.Commit(); err != nil {
-		sp.SetTag("method err", fmt.Sprintf("commit transaction failed: %v", err))
+		sp.SetTag("method err", fmt.Sprintf("commit transaction failed: %v, request id %s", err, requestId))
 		logs.Error("commit transaction failed: %v", err)
-		return err
+		return nil, err
 	}
-	sp.SetTag(method, "success")
-	return nil
+	sp.SetTag(method, fmt.Sprintf("success, request id %s", requestId))
+
+	//set child span to ctx
+	ctxWithSpan := opentracing.ContextWithSpan(ctx, sp)
+	md := make(map[string]string)
+	if err := opentracing.GlobalTracer().Inject(sp.Context(),
+		opentracing.TextMap,
+		opentracing.TextMapCarrier(md)); err != nil {
+		logs.Error("inject span err, %s", err.Error())
+	}
+	return ctxWithSpan, nil
 }

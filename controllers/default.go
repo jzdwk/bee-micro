@@ -4,6 +4,7 @@ import (
 	mybroker "bee-micro/broker"
 	httpClient "bee-micro/client/http"
 	"bee-micro/config"
+	"bee-micro/dao"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -14,6 +15,7 @@ import (
 	"github.com/asim/go-micro/v3/selector"
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
+	"github.com/astaxie/beego/orm"
 	"net/http"
 	"time"
 )
@@ -39,17 +41,16 @@ type Resp struct {
 // @Success 200 success message
 // @router /:message/get [get]
 func (c *MainController) Get() {
-	//parentSpanCtx := c.Ctx.Request.Context().Value("parentSpanCtx")
+	httpCtx := c.Ctx.Request.Context()
 	//操作db
-	/*	dao.WithTransaction("DeleteOneService", parentSpanCtx.(opentracing.SpanContext), func(o orm.Ormer) error {
+	daoCtx, _ := dao.WithTransaction(httpCtx, "DeleteOneService", func(o orm.Ormer) error {
 		dao.DeleteService(o, "123")
 		return nil
-	})*/
+	})
 	message := c.Ctx.Input.Param(":message")
 	logs.Info("get param from uri, %s", message)
-	//
 	//_, err := httplib.Get("http://myecs.jzd:65080/anything/get").DoRequest()
-	err := DoHttpReq(c.Ctx.Request.Context())
+	err := DoHttpReq(daoCtx)
 	if err != nil {
 		c.Ctx.Output.SetStatus(http.StatusInternalServerError)
 		msg := Resp{Result: "fail", Message: fmt.Sprintf("do http bin request err, %s", err.Error())}

@@ -6,6 +6,7 @@
 package server
 
 import (
+	"bee-micro/dao"
 	"bee-micro/util"
 	"context"
 	"fmt"
@@ -18,6 +19,8 @@ import (
 )
 
 var sf = 100
+
+const HttpXRequestID = "X-Request-ID"
 
 type tracerWrapper struct {
 	//spanCtx opentracing.SpanContext
@@ -41,15 +44,23 @@ func (tr *tracerWrapper) Wrapper(h http.Handler) http.Handler {
 			sp = opentracing.GlobalTracer().StartSpan(spanName, opentracing.ChildOf(spanCtx))
 		}
 		defer sp.Finish()
+		//set context
+		ctxWithSpan := opentracing.ContextWithSpan(r.Context(), sp)
 		if err := opentracing.GlobalTracer().Inject(sp.Context(),
 			opentracing.TextMap,
 			opentracing.TextMapCarrier(md)); err != nil {
 			logs.Error("inject span err, %s", err.Error())
 		}
-		//tr.spanCtx = sp.Context()
-		ctx := context.WithValue(r.Context(), "parentSpanCtx", sp.Context())
-		r = r.WithContext(ctx)
-		m := httpSnoop.CaptureMetrics(h, w, r)
+		//get requestId
+		var requestId string
+		if requestId = r.Header.Get(HttpXRequestID); requestId == "" {
+			requestId = dao.UUID()
+		}
+		sp.SetTag(HttpXRequestID, requestId)
+		ctxWithRequestId := context.WithValue(ctxWithSpan, HttpXRequestID, requestId)
+
+		//http ServeHTTP()
+		m := httpSnoop.CaptureMetrics(h, w, r.WithContext(ctxWithRequestId))
 		ext.HTTPMethod.Set(sp, r.Method)
 		ext.HTTPUrl.Set(sp, r.URL.EscapedPath())
 		ext.HTTPStatusCode.Set(sp, uint16(m.Code))

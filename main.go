@@ -12,6 +12,7 @@ import (
 	etcdv3 "github.com/asim/go-micro/plugins/registry/etcd/v3"
 	httpServer "github.com/asim/go-micro/plugins/server/http/v3"
 	"github.com/asim/go-micro/v3"
+	_ "github.com/asim/go-micro/v3/plugins"
 	"github.com/asim/go-micro/v3/registry"
 	"github.com/asim/go-micro/v3/server"
 	"github.com/astaxie/beego"
@@ -57,7 +58,6 @@ func main() {
 			register,
 		}
 	})
-
 	//http server
 	serverName := fmt.Sprintf("http-demo")
 	serverID := uuid.Must(uuid.NewUUID()).String()
@@ -120,8 +120,8 @@ func main() {
 	//init micro service
 	service := micro.NewService(
 		//health check
-		micro.RegisterTTL(time.Second*100),
-		micro.RegisterInterval(time.Second*100),
+		micro.RegisterTTL(time.Second*10),
+		micro.RegisterInterval(time.Second*1000),
 		//backend server
 		micro.Server(srv),
 		micro.Address(":8100"),
@@ -131,7 +131,7 @@ func main() {
 		micro.Broker(mybroker.RedisBk),
 		//logging
 	)
-	go PrometheusBoot()
+	//go PrometheusBoot()
 	//db init
 	initial.InitDb()
 	//run micro

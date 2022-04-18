@@ -2,7 +2,9 @@
 package http
 
 import (
+	"bee-micro/dao"
 	"bee-micro/util"
+	"bee-micro/wrappers/server"
 	"bufio"
 	"bytes"
 	"context"
@@ -126,24 +128,20 @@ func (h *httpClient) call(ctx context.Context, node *registry.Node, req client.R
 		return errors.InternalServerError("go.micro.client", err.Error())
 	}
 
-	hreq := &http.Request{
-		Method:        req.Method(),
-		URL:           URL,
-		Header:        header,
-		Body:          buf,
-		ContentLength: int64(len(b)),
-		Host:          address,
-	}
-
 	//open http tracer
 	var clientSpan opentracing.Span
 	if h.trace {
+		//
+		if requestId := ctx.Value(server.HttpXRequestID).(string); requestId != "" {
+			header.Set(server.HttpXRequestID, requestId)
+		} else {
+			header.Set(server.HttpXRequestID, dao.UUID())
+		}
+
 		tracer := opentracing.GlobalTracer()
 		name := fmt.Sprintf("Http Client Span: %s %s%s", req.Method(), req.Service(), req.Endpoint())
 		var opts []opentracing.StartSpanOption
-		if spanFromSelfDefine := ctx.Value("parentSpanCtx").(opentracing.SpanContext); spanFromSelfDefine != nil {
-			opts = append(opts, opentracing.ChildOf(spanFromSelfDefine))
-		} else if spanFromCtx := opentracing.SpanFromContext(ctx); spanFromCtx != nil {
+		if spanFromCtx := opentracing.SpanFromContext(ctx); spanFromCtx != nil {
 			opts = append(opts, opentracing.ChildOf(spanFromCtx.Context()))
 		} else if spanFromTextMap, err := tracer.Extract(opentracing.TextMap, opentracing.TextMapCarrier(ctxMd)); spanFromTextMap != nil && err == nil {
 			opts = append(opts, opentracing.ChildOf(spanFromTextMap))
@@ -155,8 +153,18 @@ func (h *httpClient) call(ctx context.Context, node *registry.Node, req client.R
 		ext.HTTPUrl.Set(clientSpan, rawurl)
 		ext.HTTPMethod.Set(clientSpan, req.Method())
 		// Inject the client span context into the headers
-		tracer.Inject(clientSpan.Context(), opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(hreq.Header))
+		tracer.Inject(clientSpan.Context(), opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(header))
 	}
+	//new request
+	hreq := &http.Request{
+		Method:        req.Method(),
+		URL:           URL,
+		Header:        header,
+		Body:          buf,
+		ContentLength: int64(len(b)),
+		Host:          address,
+	}
+
 	// make the request
 	hrsp, err := http.DefaultClient.Do(hreq.WithContext(ctx))
 	if err != nil {
