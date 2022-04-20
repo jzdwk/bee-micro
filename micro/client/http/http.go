@@ -130,10 +130,13 @@ func (h *httpClient) call(ctx context.Context, node *registry.Node, req client.R
 	var clientSpan opentracing.Span
 	if h.trace {
 		//
-		if requestId := ctx.Value(util.HttpXRequestID); requestId != nil && requestId.(string) != "" {
-			header.Set(util.HttpXRequestID, requestId.(string))
+		var requestId string
+		if parentId := ctx.Value(util.HttpXRequestID); parentId != nil && parentId.(string) != "" {
+			requestId = parentId.(string)
+			header.Set(util.HttpXRequestID, requestId)
 		} else {
-			header.Set(util.HttpXRequestID, util.UUID())
+			requestId = util.UUID()
+			header.Set(util.HttpXRequestID, requestId)
 		}
 
 		tracer := opentracing.GlobalTracer()
@@ -150,6 +153,7 @@ func (h *httpClient) call(ctx context.Context, node *registry.Node, req client.R
 		ext.SpanKindRPCClient.Set(clientSpan)
 		ext.HTTPUrl.Set(clientSpan, rawurl)
 		ext.HTTPMethod.Set(clientSpan, req.Method())
+		clientSpan.SetTag(util.HttpXRequestID, requestId)
 		// Inject the client span context into the headers
 		tracer.Inject(clientSpan.Context(), opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(header))
 	}
