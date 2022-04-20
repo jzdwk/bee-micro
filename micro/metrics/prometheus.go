@@ -1,15 +1,11 @@
-/*
-@Time : 2022/4/8
-@Author : jzd
-@Project: bee-micro
-*/
-package filter
+package metrics
 
 import (
 	"fmt"
 	"github.com/asim/go-micro/v3/logger"
-	"github.com/astaxie/beego/context"
+	httpSnoop "github.com/felixge/httpsnoop"
 	"github.com/prometheus/client_golang/prometheus"
+	"net/http"
 )
 
 var (
@@ -22,7 +18,7 @@ var (
 	timeCounterHistogram *prometheus.HistogramVec
 )
 
-type Options struct {
+type metricWrapper struct {
 	Name    string
 	Version string
 	ID      string
@@ -86,16 +82,23 @@ func init() {
 
 }
 
-func (op *Options) Filter(ctx *context.Context) {
-	endpoint := ctx.Request.RemoteAddr
-	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
-		us := v * 1000000 // make microseconds
-		timeCounterSummary.WithLabelValues(op.Name, op.Version, op.ID, endpoint).Observe(us)
-		timeCounterHistogram.WithLabelValues(op.Name, op.Version, op.ID, endpoint).Observe(v)
-	}))
-	defer timer.ObserveDuration()
-	if ctx.ResponseWriter.Status > 400 {
-		opsCounter.WithLabelValues(op.Name, op.Version, op.ID, endpoint, "failure").Inc()
-	}
-	opsCounter.WithLabelValues(op.Name, op.Version, op.ID, endpoint, "success").Inc()
+func NewMetricWrapper(Name, Version, ID string) *metricWrapper {
+	return &metricWrapper{Name: Name, Version: Version, ID: ID}
+}
+
+func (o *metricWrapper) Wrapper(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		endpoint := r.RemoteAddr
+		timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
+			us := v * 1000000 // make microseconds
+			timeCounterSummary.WithLabelValues(o.Name, o.Version, o.ID, endpoint).Observe(us)
+			timeCounterHistogram.WithLabelValues(o.Name, o.Version, o.ID, endpoint).Observe(v)
+		}))
+		defer timer.ObserveDuration()
+		m := httpSnoop.CaptureMetrics(h, w, r)
+		if m.Code > http.StatusBadRequest {
+			opsCounter.WithLabelValues(o.Name, o.Version, o.ID, endpoint, "failure").Inc()
+		}
+		opsCounter.WithLabelValues(o.Name, o.Version, o.ID, endpoint, "success").Inc()
+	})
 }

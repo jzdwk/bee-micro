@@ -1,8 +1,8 @@
 package client
 
 import (
-	httpClient "bee-micro/client/http"
-	"bee-micro/tracer"
+	httpClient "bee-micro/micro/client/http"
+	tracer2 "bee-micro/micro/tracer"
 	"context"
 	"github.com/asim/go-micro/plugins/registry/etcd/v3"
 	"github.com/asim/go-micro/v3/client"
@@ -21,7 +21,7 @@ var (
 
 func TestHttpCli(t *testing.T) {
 	//tracing
-	tr, io, err := tracer.NewTracer("http-demo-tracing", jaeger)
+	tr, io, err := tracer2.NewTracer("http-demo-tracing", jaeger)
 	if err != nil {
 		log.Fatal(err)
 	}

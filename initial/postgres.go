@@ -6,7 +6,7 @@
 package initial
 
 import (
-	"bee-micro/config"
+	config2 "bee-micro/micro/config"
 	"database/sql"
 	"fmt"
 	"github.com/astaxie/beego/logs"
@@ -86,7 +86,7 @@ func (p *postgreSQL) register(alias ...string) error {
 // newPGSQL returns an instance of postgres
 func newPGSQL() database {
 
-	conf, err := config.GetDB()
+	conf, err := config2.GetDB()
 	if err != nil {
 		logs.Error("get database from config center err, %v", err.Error())
 		return nil

@@ -20,5 +20,4 @@ commentsRouter*
 .idea
 # xml
 *.xml
-vendor
 *.tmp

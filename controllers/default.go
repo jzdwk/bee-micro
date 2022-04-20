@@ -1,10 +1,10 @@
 package controllers
 
 import (
-	mybroker "bee-micro/broker"
-	httpClient "bee-micro/client/http"
-	"bee-micro/config"
 	"bee-micro/dao"
+	mybroker "bee-micro/micro/broker"
+	httpClient "bee-micro/micro/client/http"
+	config2 "bee-micro/micro/config"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -42,7 +42,7 @@ type Resp struct {
 // @router /:message/get [get]
 func (c *MainController) Get() {
 	httpCtx := c.Ctx.Request.Context()
-	//操作db
+	//操作db with span
 	daoCtx, _ := dao.WithTransaction(httpCtx, "DeleteOneService", func(o orm.Ormer) error {
 		dao.DeleteService(o, "123")
 		return nil
@@ -59,7 +59,7 @@ func (c *MainController) Get() {
 		return
 	}
 	c.Ctx.Output.SetStatus(http.StatusOK)
-	conf, _ := config.GetKong()
+	conf, _ := config2.GetKong()
 	msg := Resp{Result: "success", Message: fmt.Sprintf("kong address from config center:[%s]", conf.Address)}
 	c.Data["json"] = msg
 	c.ServeJSON()
@@ -112,7 +112,6 @@ func DoHttpReq(ctx context.Context) error {
 	//client wrap example
 	//c = clientWrapper.NewLogWrap(c)
 	return doGetRequest(ctx, c)
-	//doPostRequest(t, c)
 }
 
 func doGetRequest(ctx context.Context, c client.Client) error {

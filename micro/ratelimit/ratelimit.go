@@ -3,7 +3,7 @@
 @Author : jzd
 @Project: bee-micro
 */
-package server
+package ratelimit
 
 import (
 	"bee-micro/controllers"

@@ -1,12 +1,14 @@
 package main
 
 import (
-	mybroker "bee-micro/broker"
-	"bee-micro/config"
 	"bee-micro/initial"
+	micro2 "bee-micro/micro"
+	mybroker "bee-micro/micro/broker"
+	config2 "bee-micro/micro/config"
+	"bee-micro/micro/metrics"
+	ratelimit2 "bee-micro/micro/ratelimit"
+	tracer2 "bee-micro/micro/tracer"
 	_ "bee-micro/routers"
-	"bee-micro/tracer"
-	serverWrapper "bee-micro/wrappers/server"
 	"flag"
 	"fmt"
 	etcdv3 "github.com/asim/go-micro/plugins/registry/etcd/v3"
@@ -34,11 +36,11 @@ var (
 
 func main() {
 	//load config from consul
-	if err := config.Init(); err != nil {
+	if err := config2.Init(); err != nil {
 		logs.Error("init consul config center err, %v", err.Error())
 		return
 	}
-	conf, err := config.GetService()
+	conf, err := config2.GetService()
 	if err != nil {
 		logs.Error("get consul from config center err, %v", err.Error())
 		return
@@ -75,36 +77,30 @@ func main() {
 	}
 	beego.InsertFilter("/demo/*", beego.BeforeRouter, rl.Filter, false)*/
 
-	// prometheus impl
-	//pr := filter.NewPrometheusMonitor("prometheus", serverName)
-	//beego.InsertFilter("/demo/*", beego.FinishRouter, pr.Filter, false)
-	/*op := filter.Options{Name: serverName, ID: serverID, Version: serverVersion}
-	beego.InsertFilter("/demo/*", beego.FinishRouter, op.Filter, false)*/
-
 	//wrapper init
-	wrappers := make([]serverWrapper.Wrapper, 0, 20)
+	wrappers := make([]micro2.Wrapper, 0, 20)
 	var apiHandler http.Handler
 	apiHandler = beego.BeeApp.Handlers
 	//1. rate limit
-	rl, err := config.GetRateLimit()
+	rl, err := config2.GetRateLimit()
 	if err != nil {
 		logs.Error("get rate limit config from config center err, %s", err.Error())
 		return
 	}
 	logs.Info("get rate limit from config center, value %+v", conf)
 	bucket := ratelimit.NewBucketWithRate(rl.Rate, rl.Capacity)
-	wrappers = append(wrappers, serverWrapper.NewRateLimitWrapper(bucket, rl.Wait))
+	wrappers = append(wrappers, ratelimit2.NewRateLimitWrapper(bucket, rl.Wait))
 
 	//2. tracer
-	tr, io, err := tracer.NewTracer("http-demo-tracing", jaeger)
+	tr, io, err := tracer2.NewTracer("http-demo-tracing", jaeger)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer io.Close()
 	opentracing.SetGlobalTracer(tr)
-	wrappers = append(wrappers, serverWrapper.NewTracerWrapper())
+	wrappers = append(wrappers, tracer2.NewTracerWrapper())
 	//3. metric
-	wrappers = append(wrappers, serverWrapper.NewMetricWrapper(serverName, serverVersion, serverID))
+	wrappers = append(wrappers, metrics.NewMetricWrapper(serverName, serverVersion, serverID))
 	for i := len(wrappers); i > 0; i-- {
 		apiHandler = (wrappers[i-1]).Wrapper(apiHandler)
 	}
@@ -113,10 +109,10 @@ func main() {
 		return
 	}
 	//redis broker
-	if err := mybroker.Init(); err != nil {
+	/*if err := mybroker.Init(); err != nil {
 		logs.Error("init broker err, %v", err.Error())
 		return
-	}
+	}*/
 	//init micro service
 	service := micro.NewService(
 		//health check
@@ -128,10 +124,10 @@ func main() {
 		//service registry
 		micro.Registry(reg),
 		//msg broker, default http broker
-		micro.Broker(mybroker.RedisBk),
+		//micro.Broker(mybroker.RedisBk),
 		//logging
 	)
-	//go PrometheusBoot()
+	go PrometheusBoot()
 	//db init
 	initial.InitDb()
 	//run micro
@@ -144,7 +140,7 @@ func main() {
 
 func PrometheusBoot() {
 	http.Handle("/metrics", promhttp.Handler())
-	conf, err := config.GetMetric()
+	conf, err := config2.GetMetric()
 	if err != nil {
 		logs.Error("get metric config from config center err, %v", err.Error())
 		return

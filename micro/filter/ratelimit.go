@@ -6,8 +6,8 @@
 package filter
 
 import (
-	"bee-micro/config"
 	"bee-micro/controllers"
+	config2 "bee-micro/micro/config"
 	"encoding/json"
 	"github.com/astaxie/beego/context"
 	"github.com/astaxie/beego/logs"
@@ -22,7 +22,7 @@ type rateLimitConfig struct {
 }
 
 func NewRateLimit() (*rateLimitConfig, error) {
-	conf, err := config.GetRateLimit()
+	conf, err := config2.GetRateLimit()
 	if err != nil {
 		return nil, err
 	}
