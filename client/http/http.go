@@ -130,8 +130,8 @@ func (h *httpClient) call(ctx context.Context, node *registry.Node, req client.R
 	var clientSpan opentracing.Span
 	if h.trace {
 		//
-		if requestId := ctx.Value(util.HttpXRequestID).(string); requestId != "" {
-			header.Set(util.HttpXRequestID, requestId)
+		if requestId := ctx.Value(util.HttpXRequestID); requestId != nil && requestId.(string) != "" {
+			header.Set(util.HttpXRequestID, requestId.(string))
 		} else {
 			header.Set(util.HttpXRequestID, util.UUID())
 		}
